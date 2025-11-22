@@ -150,13 +150,23 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-      onRehydrateStorage: () => (state) => {
-        if (!state) return;
 
-        const token = state.token;
-        if (token) {
-          axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        }
+      onRehydrateStorage: () => {
+        // Guarantee axios has the token immediately after rehydration
+        const unsub = useAuthStore.persist.onFinishHydration((state) => {
+          if (state?.token) {
+            axios.defaults.headers.common[
+              "Authorization"
+            ] = `Bearer ${state.token}`;
+          }
+        });
+          unsub();
+        return (state) => {
+          if (!state || !state.token) return;
+          axios.defaults.headers.common[
+            "Authorization"
+          ] = `Bearer ${state.token}`;
+        };
       },
     }
   )
