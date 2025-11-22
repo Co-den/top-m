@@ -16,6 +16,7 @@ import {
   LogOut,
   Send,
 } from "lucide-react";
+import axios from "axios";
 
 interface Profile {
   phone: string;
@@ -175,3 +176,18 @@ function Item({ icon, text, onClick }: ItemProps) {
     </button>
   );
 }
+
+// restore axios header after rehydrate
+// cast to any because the persist middleware typings do not expose onRehydrateStorage on the bound store type
+;(useAuthStore as any).onRehydrateStorage = () => (state: any) => {
+  try {
+    const token = (state as any)?.token;
+    if (token) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    } else {
+      delete axios.defaults.headers.common["Authorization"];
+    }
+  } catch {
+    /* ignore */
+  }
+};
