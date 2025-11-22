@@ -60,7 +60,8 @@ export const useAuthStore = create<AuthState>()(
           referralCode,
         });
 
-        const { token, user } = res.data;
+        const token = res.data.token;
+        const user = res.data.data.user;
 
         axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
@@ -85,7 +86,8 @@ export const useAuthStore = create<AuthState>()(
           password,
         });
 
-        const { token, user } = res.data;
+        const token = res.data.token;
+        const user = res.data.data.user;
 
         axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
@@ -95,7 +97,6 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true,
           isLoading: false,
         });
-
         return res.data;
       },
 
@@ -127,7 +128,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const res = await axios.get(`${USER_API}/me`);
           set({
-            user: res.data.user,
+            user: res.data.data.user,
             isAuthenticated: true,
           });
         } catch {
