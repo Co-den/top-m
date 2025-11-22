@@ -30,7 +30,7 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  token?: string | null; // <- added
+  token?: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   isCheckingAuth: boolean;
@@ -65,24 +65,41 @@ export const useAuthStore = create<AuthState>()(
       error: null,
       message: null,
 
-      register: async (fullName, email, phoneNumber, password, confirmPassword, referralCode) => {
+      register: async (
+        fullName,
+        email,
+        phoneNumber,
+        password,
+        confirmPassword,
+        referralCode
+      ) => {
         set({ isLoading: true, error: null });
         try {
-          const { data } = await axios.post("https://top-mart-api.onrender.com/api/auth/register", {
-            fullName,
-            email,
-            phoneNumber,
-            password,
-            confirmPassword,
-            referralCode,
-          });
+          const { data } = await axios.post(
+            "https://top-mart-api.onrender.com/api/auth/register",
+            {
+              fullName,
+              email,
+              phoneNumber,
+              password,
+              confirmPassword,
+              referralCode,
+            }
+          );
 
           // set token header if provided
           if (data?.token) {
-            axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+            axios.defaults.headers.common[
+              "Authorization"
+            ] = `Bearer ${data.token}`;
           }
 
-          set({ user: data.user, token: data?.token ?? null, isAuthenticated: true, isLoading: false });
+          set({
+            user: data.user,
+            token: data?.token ?? null,
+            isAuthenticated: true,
+            isLoading: false,
+          });
           return data;
         } catch (error: any) {
           const msg = getErrorMessage(error);
@@ -94,13 +111,18 @@ export const useAuthStore = create<AuthState>()(
       login: async (phoneNumber, password) => {
         set({ isLoading: true, error: null });
         try {
-          const { data } = await axios.post("https://top-mart-api.onrender.com/api/auth/login", {
-            phoneNumber,
-            password,
-          });
+          const { data } = await axios.post(
+            "https://top-mart-api.onrender.com/api/auth/login",
+            {
+              phoneNumber,
+              password,
+            }
+          );
 
           if (data?.token) {
-            axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+            axios.defaults.headers.common[
+              "Authorization"
+            ] = `Bearer ${data.token}`;
           }
 
           set({
@@ -143,13 +165,23 @@ export const useAuthStore = create<AuthState>()(
       verifyEmail: async (code) => {
         set({ isLoading: true, error: null });
         try {
-          const { data } = await axios.post("https://top-mart-api.onrender.com/api/auth/verify-email", { code });
+          const { data } = await axios.post(
+            "https://top-mart-api.onrender.com/api/auth/verify-email",
+            { code }
+          );
 
           if (data?.token) {
-            axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+            axios.defaults.headers.common[
+              "Authorization"
+            ] = `Bearer ${data.token}`;
           }
 
-          set({ user: data.user, token: data?.token ?? null, isAuthenticated: true, isLoading: false });
+          set({
+            user: data.user,
+            token: data?.token ?? null,
+            isAuthenticated: true,
+            isLoading: false,
+          });
           return data;
         } catch (error: any) {
           const msg = getErrorMessage(error);
@@ -161,10 +193,14 @@ export const useAuthStore = create<AuthState>()(
       checkAuth: async () => {
         set({ isCheckingAuth: true, error: null });
         try {
-          const { data } = await axios.get("https://top-mart-api.onrender.com/api/auth/check-auth");
+          const { data } = await axios.get(
+            "https://top-mart-api.onrender.com/api/auth/check-auth"
+          );
           // if server returns token, set header
           if (data?.token) {
-            axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+            axios.defaults.headers.common[
+              "Authorization"
+            ] = `Bearer ${data.token}`;
           }
           set({
             user: data.user,
@@ -176,19 +212,30 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           // ensure header cleared on failed check
           delete axios.defaults.headers.common["Authorization"];
-          set({ isAuthenticated: false, isCheckingAuth: false, error: null, token: null });
+          set({
+            isAuthenticated: false,
+            isCheckingAuth: false,
+            error: null,
+            token: null,
+          });
         }
       },
 
       forgotPassword: async (email) => {
         set({ isLoading: true, error: null });
         try {
-          const { data } = await axios.post("https://top-mart-api.onrender.com/api/auth/forgot-password", { email });
+          const { data } = await axios.post(
+            "https://top-mart-api.onrender.com/api/auth/forgot-password",
+            { email }
+          );
           set({ message: data.message, isLoading: false });
           return data;
         } catch (error: any) {
           const msg = getErrorMessage(error);
-          set({ error: msg || "Error sending reset password email", isLoading: false });
+          set({
+            error: msg || "Error sending reset password email",
+            isLoading: false,
+          });
           throw error;
         }
       },
@@ -196,7 +243,10 @@ export const useAuthStore = create<AuthState>()(
       resetPassword: async (token, password) => {
         set({ isLoading: true, error: null });
         try {
-          const { data } = await axios.post(`https://top-mart-api.onrender.com/api/auth/reset-password/${token}`, { password });
+          const { data } = await axios.post(
+            `https://top-mart-api.onrender.com/api/auth/reset-password/${token}`,
+            { password }
+          );
           set({ message: data.message, isLoading: false });
           return data;
         } catch (error: any) {
@@ -213,6 +263,19 @@ export const useAuthStore = create<AuthState>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
+      // ensure axios header is restored after rehydrate
+      onRehydrateStorage: () => (state) => {
+        try {
+          const token = (state as any)?.token;
+          if (token) {
+            axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+          } else {
+            delete axios.defaults.headers.common["Authorization"];
+          }
+        } catch {
+          /* ignore */
+        }
+      },
     }
   )
 );
