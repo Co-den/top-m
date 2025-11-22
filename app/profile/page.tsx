@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { apiRequest } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { BottomNav } from "@/components/bottom-nav";
 import {
@@ -33,39 +32,40 @@ export default function ProfilePage() {
   const logout = useAuthStore((state) => state.logout);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
 
     const fetchProfile = async () => {
       try {
-        const data = await apiRequest("https://top-mart-api.onrender.com/api/users/me");
+        const res = await axios.get(
+          "https://top-mart-api.onrender.com/api/users/me"
+        );
+        const data = res.data.data.user;
+
         setProfile({
-          phone: data?.phoneNumber ?? data?.phone ?? "Unknown",
-          balance: data?.balance ?? data?.accountBalance ?? 0,
-          uniqueId: data?.uniqueId ?? data?.id ?? "",
+          phone: data.phoneNumber ?? data.phone ?? "Unknown",
+          balance: data.balance ?? data.account?.balance ?? 0,
+          uniqueId: data.id ?? data.uniqueId ?? "",
         });
       } catch (err: any) {
         console.error("PROFILE ERROR:", err);
         setProfile(null);
-        // redirect on unauthorized
-        if (
-          err?.status === 401 ||
-          String(err?.message).toLowerCase().includes("not authenticated")
-        ) {
+
+        if (err?.response?.status === 401) {
+          await logout();
           router.push("/login");
         }
       }
     };
 
     fetchProfile();
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, router, logout]);
 
   const handleLogout = async () => {
-    try {
-      await logout();
-      router.push("/login");
-    } catch (err) {
-      console.error("Logout error:", err);
-    }
+    await logout();
+    router.push("/login");
   };
 
   return (
@@ -77,11 +77,10 @@ export default function ProfilePage() {
             <div className="h-16 w-16 rounded-full bg-white/30" />
             <div>
               <p className="font-semibold text-lg leading-tight">
-                {profile ? profile.phone : "Loading..."}
+                {profile?.phone ?? "Loading..."}
               </p>
               <p className="text-xs opacity-90 mt-1">
-                {" "}
-                ID: {profile?.uniqueId || "Loading..."}
+                ID: {profile?.uniqueId ?? "Loading..."}
               </p>
             </div>
           </div>
@@ -89,37 +88,32 @@ export default function ProfilePage() {
           <div className="mt-5 bg-white/20 backdrop-blur-sm px-5 py-4 rounded-2xl">
             <p className="text-xs opacity-90">My Balance</p>
             <p className="text-3xl font-bold tracking-wide mt-1">
-              ₦{profile ? profile.balance : "..."}
+              ₦{profile?.balance ?? "..."}
             </p>
           </div>
         </div>
 
         {/* BODY */}
         <div className="px-4 mt-6 space-y-7">
-          {/* FINANCIAL */}
           <Section title="FINANCIAL">
             <Item icon={<Send size={20} />} text="Withdraw" />
             <Item icon={<Building2 size={20} />} text="Bank Account" />
           </Section>
 
-          {/* RECORDS */}
           <Section title="RECORDS">
             <Item icon={<Banknote size={20} />} text="Deposit Records" />
             <Item icon={<Banknote size={20} />} text="Withdrawal Records" />
             <Item icon={<FileText size={20} />} text="Income Records" />
           </Section>
 
-          {/* NETWORK */}
           <Section title="NETWORK">
             <Item icon={<Users size={20} />} text="My Team" />
           </Section>
 
-          {/* SUPPORT */}
           <Section title="SUPPORT">
             <Item icon={<Users size={20} />} text="Telegram Group" />
           </Section>
 
-          {/* ACCOUNT */}
           <Section title="ACCOUNT">
             <Item icon={<Lock size={20} />} text="Change Password" />
             <Item
@@ -148,7 +142,6 @@ function Section({
       <p className="text-[11px] font-semibold text-slate-500 mb-2 tracking-wide">
         {title}
       </p>
-
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         {children}
       </div>
@@ -176,18 +169,3 @@ function Item({ icon, text, onClick }: ItemProps) {
     </button>
   );
 }
-
-// restore axios header after rehydrate
-// cast to any because the persist middleware typings do not expose onRehydrateStorage on the bound store type
-;(useAuthStore as any).onRehydrateStorage = () => (state: any) => {
-  try {
-    const token = (state as any)?.token;
-    if (token) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    } else {
-      delete axios.defaults.headers.common["Authorization"];
-    }
-  } catch {
-    /* ignore */
-  }
-};

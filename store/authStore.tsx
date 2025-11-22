@@ -25,7 +25,7 @@ interface AuthState {
 
   register: (...args: any[]) => Promise<any>;
   login: (phone: string, pass: string) => Promise<any>;
-  logout: () => void;
+  logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
 
@@ -50,29 +50,36 @@ export const useAuthStore = create<AuthState>()(
         referralCode
       ) => {
         set({ isLoading: true, error: null });
+        try {
+          const res = await axios.post(`${API}/register`, {
+            fullName,
+            email,
+            phoneNumber,
+            password,
+            confirmPassword,
+            referralCode,
+          });
 
-        const res = await axios.post(`${API}/register`, {
-          fullName,
-          email,
-          phoneNumber,
-          password,
-          confirmPassword,
-          referralCode,
-        });
+          const token = res.data.token;
+          const user = res.data.data.user;
 
-        const token = res.data.token;
-        const user = res.data.data.user;
+          axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+          set({
+            user,
+            token,
+            isAuthenticated: true,
+            isLoading: false,
+          });
 
-        set({
-          user,
-          token,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-
-        return res.data;
+          return res.data;
+        } catch (err: any) {
+          set({
+            error: err?.response?.data?.message || err.message,
+            isLoading: false,
+          });
+          throw err;
+        }
       },
 
       // -----------------------------
@@ -80,46 +87,58 @@ export const useAuthStore = create<AuthState>()(
       // -----------------------------
       login: async (phoneNumber, password) => {
         set({ isLoading: true, error: null });
+        try {
+          const res = await axios.post(`${API}/login`, {
+            phoneNumber,
+            password,
+          });
 
-        const res = await axios.post(`${API}/login`, {
-          phoneNumber,
-          password,
-        });
+          const token = res.data.token;
+          const user = res.data.data.user;
 
-        const token = res.data.token;
-        const user = res.data.data.user;
+          axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+          set({
+            user,
+            token,
+            isAuthenticated: true,
+            isLoading: false,
+          });
 
-        set({
-          user,
-          token,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-        return res.data;
+          return res.data;
+        } catch (err: any) {
+          set({
+            error: err?.response?.data?.message || err.message,
+            isLoading: false,
+          });
+          throw err;
+        }
       },
 
       // -----------------------------
       // LOGOUT
       // -----------------------------
-      logout: () => {
-        delete axios.defaults.headers.common["Authorization"];
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-        });
+      logout: async () => {
+        try {
+          await axios.post(`${API}/logout`).catch(() => {});
+        } finally {
+          delete axios.defaults.headers.common["Authorization"];
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+          });
+        }
       },
 
       // -----------------------------
-      // CHECK AUTH (on page refresh)
+      // CHECK AUTH
       // -----------------------------
       checkAuth: async () => {
         const token = get().token;
-
         if (!token) {
-          set({ isAuthenticated: false });
+          set({ isAuthenticated: false, user: null });
+          delete axios.defaults.headers.common["Authorization"];
           return;
         }
 
@@ -127,22 +146,13 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           const res = await axios.get(`${USER_API}/me`);
-          set({
-            user: res.data.data.user,
-            isAuthenticated: true,
-          });
+          set({ user: res.data.data.user, isAuthenticated: true });
         } catch {
-          // Token invalid
-          set({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-          });
           delete axios.defaults.headers.common["Authorization"];
+          set({ user: null, token: null, isAuthenticated: false });
         }
       },
     }),
-
     {
       name: "topmart-auth",
       partialize: (state) => ({
@@ -150,16 +160,23 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-
-      onRehydrateStorage: () => {
-        return (state) => {
-          if (state?.token) {
-            axios.defaults.headers.common[
-              "Authorization"
-            ] = `Bearer ${state.token}`;
-          }
-        };
+      onRehydrateStorage: () => (state) => {
+        if (state?.token) {
+          axios.defaults.headers.common[
+            "Authorization"
+          ] = `Bearer ${state.token}`;
+        }
       },
     }
   )
 );
+
+// -----------------------------
+// AUTO-CHECK AUTH ON APP LOAD
+// -----------------------------
+if (typeof window !== "undefined") {
+  const store = useAuthStore.getState();
+  if (store.token && !store.isAuthenticated) {
+    store.checkAuth();
+  }
+}
