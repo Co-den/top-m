@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { BottomNav } from "@/components/bottom-nav";
@@ -27,41 +27,74 @@ export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  const user = useAuthStore((state) => state.user);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const logout = useAuthStore((state) => state.logout);
+  const { user, isAuthenticated, token, logout, checkAuth } = useAuthStore(
+    (state) => ({
+      user: state.user,
+      isAuthenticated: state.isAuthenticated,
+      token: state.token,
+      logout: state.logout,
+      checkAuth: state.checkAuth,
+    })
+  );
 
+  // Redirect to login if not authenticated and restore auth on mount
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
+    const init = async () => {
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      try {
+        await checkAuth();
+      } catch {
+        router.push("/login");
+        return;
+      }
+    };
+    init();
+  }, [token, checkAuth, router]);
+
+  // Fetch profile after authentication
+  useEffect(() => {
+    // if we have the user in the auth store, use it (no network call)
+    if (user) {
+      setProfile({
+        phone: (user as any)?.phoneNumber ?? (user as any)?.phone ?? "Unknown",
+        balance: Number(
+          (user as any)?.balance ?? (user as any)?.account?.balance ?? 0
+        ),
+        uniqueId: (user as any)?.id ?? (user as any)?._id ?? "",
+      });
       return;
     }
+
+    // fallback: fetch profile from API when authenticated but no user in store
+    if (!isAuthenticated) return;
 
     const fetchProfile = async () => {
       try {
         const res = await axios.get(
-          "https://top-mart-api.onrender.com/api/users/me"
+          "https://top-mart-api.onrender.com/api/users/me",
+          {
+            withCredentials: true,
+          }
         );
-        const data = res.data.data.user;
+        const data = res.data?.data?.user ?? res.data?.user ?? res.data;
 
         setProfile({
-          phone: data.phoneNumber ?? data.phone ?? "Unknown",
-          balance: data.balance ?? data.account?.balance ?? 0,
-          uniqueId: data.id ?? data.uniqueId ?? "",
+          phone: data?.phoneNumber ?? data?.phone ?? "Unknown",
+          balance: data?.balance ?? data?.account?.balance ?? 0,
+          uniqueId: data?.id ?? data?._id ?? "",
         });
-      } catch (err: any) {
+      } catch (err) {
         console.error("PROFILE ERROR:", err);
         setProfile(null);
-
-        if (err?.response?.status === 401) {
-          await logout();
-          router.push("/login");
-        }
       }
     };
 
     fetchProfile();
-  }, [isAuthenticated, user, router, logout]);
+  }, [user, isAuthenticated]);
 
   const handleLogout = async () => {
     await logout();
