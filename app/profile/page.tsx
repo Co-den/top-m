@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { BottomNav } from "@/components/bottom-nav";
 import {
-  Wallet,
-  Banknote,
   ArrowRight,
   Building2,
   FileText,
@@ -14,8 +12,8 @@ import {
   Lock,
   LogOut,
   Send,
+  Banknote,
 } from "lucide-react";
-import axios from "axios";
 
 interface Profile {
   phone: string;
@@ -27,74 +25,30 @@ export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  const { user, isAuthenticated, token, logout, checkAuth } = useAuthStore(
-    (state) => ({
-      user: state.user,
-      isAuthenticated: state.isAuthenticated,
-      token: state.token,
-      logout: state.logout,
-      checkAuth: state.checkAuth,
-    })
-  );
+  const { user, isAuthenticated, logout } = useAuthStore((state) => ({
+    user: state.user,
+    isAuthenticated: state.isAuthenticated,
+    logout: state.logout,
+  }));
 
-  // Redirect to login if not authenticated and restore auth on mount
+  // redirect if not authenticated
   useEffect(() => {
-    const init = async () => {
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      try {
-        await checkAuth();
-      } catch {
-        router.push("/login");
-        return;
-      }
-    };
-    init();
-  }, [token, checkAuth, router]);
-
-  // Fetch profile after authentication
-  useEffect(() => {
-    // if we have the user in the auth store, use it (no network call)
-    if (user) {
-      setProfile({
-        phone: (user as any)?.phoneNumber ?? (user as any)?.phone ?? "Unknown",
-        balance: Number(
-          (user as any)?.balance ?? (user as any)?.account?.balance ?? 0
-        ),
-        uniqueId: (user as any)?.id ?? (user as any)?._id ?? "",
-      });
-      return;
+    if (!isAuthenticated) {
+      router.push("/login");
     }
+  }, [isAuthenticated, router]);
 
-    // fallback: fetch profile from API when authenticated but no user in store
-    if (!isAuthenticated) return;
-
-    const fetchProfile = async () => {
-      try {
-        const res = await axios.get(
-          "https://top-mart-api.onrender.com/api/users/me",
-          {
-            withCredentials: true,
-          }
-        );
-        const data = res.data?.data?.user ?? res.data?.user ?? res.data;
-
-        setProfile({
-          phone: data?.phoneNumber ?? data?.phone ?? "Unknown",
-          balance: data?.balance ?? data?.account?.balance ?? 0,
-          uniqueId: data?.id ?? data?._id ?? "",
-        });
-      } catch (err) {
-        console.error("PROFILE ERROR:", err);
-        setProfile(null);
-      }
-    };
-
-    fetchProfile();
-  }, [user, isAuthenticated]);
+  // assign profile from persisted user
+  useEffect(() => {
+    if (!user) return;
+    setProfile({
+      phone: (user as any)?.phoneNumber ?? (user as any)?.phone ?? "Unknown",
+      balance: Number(
+        (user as any)?.balance ?? (user as any)?.account?.balance ?? 0
+      ),
+      uniqueId: (user as any)?.id ?? (user as any)?._id ?? "",
+    });
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
@@ -197,13 +151,8 @@ function Item({ icon, text, path, onClick }: ItemProps) {
   const router = useRouter();
 
   const handleClick = () => {
-    if (onClick) {
-      onClick();
-      return;
-    }
-    if (path) {
-      router.push(path);
-    }
+    if (onClick) return onClick();
+    if (path) router.push(path);
   };
 
   return (
