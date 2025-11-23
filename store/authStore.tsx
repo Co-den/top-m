@@ -11,6 +11,12 @@ export interface User {
   phone: string;
   uniqueId: string;
   balance: number;
+  bankAccount: {
+    bankName: string;
+    accountNumber: string;
+    accountName: string;
+  } | null;
+
 }
 
 interface AuthState {

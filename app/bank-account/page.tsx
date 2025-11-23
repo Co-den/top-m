@@ -1,33 +1,98 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BottomNav } from "@/components/bottom-nav";
+import axios from "axios";
 
 export default function UpdateBankPage() {
+  const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
   const [selectedBank, setSelectedBank] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
-  const banks = [
-    "Select Bank",
-    "GTBank",
-    "Access Bank",
-    "Zenith Bank",
-    "First Bank",
-    "UBA",
-    "Opay",
-    "Moniepoint",
-  ];
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(
+          "https://top-mart-api.onrender.com/api/bank/banks",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          }
+        );
+        setBanks(res.data.banks);
+      } catch (err) {
+        console.error("Failed to fetch banks", err);
+      }
+    };
+    fetchBanks();
+  }, []);
 
-  const handleSubmit = () => {
-    console.log({
-      bank: selectedBank,
-      accountNumber,
-      accountName,
-    });
+  // 🔹 Resolve account name in real-time
+  const handleResolveAccount = async () => {
+    if (!selectedBank || accountNumber.length !== 10) return;
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+
+      const res = await axios.post(
+        "https://top-mart-api.onrender.com/api/bank/bank-account",
+        {
+          bankCode: selectedBank,
+          accountNumber,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        }
+      );
+
+      setAccountName(res.data.accountName);
+    } catch (err: any) {
+      setAccountName("Unable to resolve account");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔹 Save bank details to backend
+  const handleSaveBank = async () => {
+    if (!selectedBank || !accountNumber || !accountName) {
+      setMessage("Please fill in all fields");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+
+      const res = await axios.post(
+        "https://top-mart-api.onrender.com/api/bank/update-account",
+        {
+          bankName: banks.find((b) => b.code === selectedBank)?.name,
+          accountNumber,
+          accountName,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        }
+      );
+
+      setMessage(res.data.message ?? "Bank details updated successfully");
+    } catch (err: any) {
+      setMessage(
+        err?.response?.data?.message ?? "Failed to update bank details"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,18 +110,16 @@ export default function UpdateBankPage() {
         <div className="bg-white rounded-lg p-6 border border-gray-200 space-y-5">
           {/* Bank Selection */}
           <div>
-            <label htmlFor="bank-select" className="sr-only">
-              Select Bank
-            </label>
             <select
               id="bank-select"
               value={selectedBank}
               onChange={(e) => setSelectedBank(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600 text-gray-700 bg-white cursor-pointer"
             >
-              {banks.map((bank) => (
-                <option key={bank} value={bank}>
-                  {bank}
+              <option value="">Select Bank</option>
+              {banks.map((bank, index) => (
+                <option key={`${bank.code}-${index}`} value={bank.code}>
+                  {bank.name}
                 </option>
               ))}
             </select>
@@ -66,10 +129,12 @@ export default function UpdateBankPage() {
           <div>
             <input
               type="text"
-              placeholder="Please enter your account number"
+              placeholder="Enter account number"
               value={accountNumber}
               onChange={(e) => setAccountNumber(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600 placeholder-gray-400"
+              onBlur={handleResolveAccount} // resolves when user leaves input
+              className="border p-2 w-full mb-4"
+              maxLength={10}
             />
           </div>
 
@@ -79,24 +144,28 @@ export default function UpdateBankPage() {
               type="text"
               placeholder="Account Name"
               value={accountName}
-              onChange={(e) => setAccountName(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600 placeholder-gray-400"
+              readOnly
+              className="border p-2 w-full mb-4 bg-gray-100"
             />
           </div>
 
           {/* Submit Button */}
           <Button
-            onClick={handleSubmit}
+            onClick={handleSaveBank}
+            disabled={loading}
             className="w-full bg-pink-600 hover:bg-pink-700 text-white py-3 rounded-lg font-bold text-lg mt-6"
           >
-            Submit
+            {loading ? "Saving..." : "Save Bank Details"}
           </Button>
+
+          {/* Feedback Message */}
+          {message && (
+            <p className="mt-4 text-center text-sm text-gray-700">{message}</p>
+          )}
         </div>
       </div>
 
       <BottomNav />
-
-      {/* Spacer for bottom nav */}
       <div className="h-24" />
     </div>
   );

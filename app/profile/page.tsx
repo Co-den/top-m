@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore, User } from "@/store/authStore";
+import { useAuthStore } from "@/store/authStore";
 import { BottomNav } from "@/components/bottom-nav";
 import {
   ArrowRight,
