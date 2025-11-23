@@ -1,128 +1,133 @@
+// authStore.ts
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import axios from "axios";
 
-axios.defaults.withCredentials = true;
+const API_BASE = "https://top-mart-api.onrender.com/api/auth";
+const CURRENT_USER = "https://top-mart-api.onrender.com/api/users";
 
-const API = "https://top-mart-api.onrender.com/api/auth";
-const USER_API = "https://top-mart-api.onrender.com/api/users";
-
-interface User {
-  id: string;
-  fullName?: string;
-  email?: string;
-  phoneNumber?: string;
+export interface User {
+  phone: string;
+  uniqueId: string;
+  balance: number;
 }
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-
-  register: (...args: any[]) => Promise<any>;
-  login: (phone: string, pass: string) => Promise<any>;
+  setUser: (user: User | null) => void;
+  login: (phoneNumber: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  checkAuth: () => Promise<void>;
+  register: (
+    fullName: string,
+    email: string,
+    phoneNumber: string,
+    password: string,
+    confirmPassword: string,
+    referralCode?: string
+  ) => Promise<any>;
+  getCurrentUser: () => Promise<User | null>;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      isLoading: false,
-      error: null,
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
+  error: null,
 
-      register: async (
-        fullName,
-        email,
-        phoneNumber,
-        password,
-        confirmPassword,
-        referralCode
-      ) => {
-        set({ isLoading: true, error: null });
-        try {
-          const res = await axios.post(`${API}/register`, {
-            fullName,
-            email,
-            phoneNumber,
-            password,
-            confirmPassword,
-            referralCode,
-          });
-          const token = res.data.token;
-          const user = res.data.data.user;
-          if (token) axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-          set({ user, token, isAuthenticated: true, isLoading: false });
-          return res.data;
-        } catch (err: any) {
-          set({ error: err?.response?.data?.message || err.message, isLoading: false });
-          throw err;
-        }
-      },
+  setUser: (user) => set({ user, isAuthenticated: !!user }),
 
-      login: async (phoneNumber, password) => {
-        set({ isLoading: true, error: null });
-        try {
-          const res = await axios.post(`${API}/login`, { phoneNumber, password });
-          const token = res.data.token;
-          const user = res.data.data.user;
-          if (token) axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-          set({ user, token, isAuthenticated: true, isLoading: false });
-          return res.data;
-        } catch (err: any) {
-          set({ error: err?.response?.data?.message || err.message, isLoading: false });
-          throw err;
-        }
-      },
-
-      logout: async () => {
-        try {
-          await axios.post(`${API}/logout`).catch(() => {});
-        } finally {
-          delete axios.defaults.headers.common["Authorization"];
-          set({ user: null, token: null, isAuthenticated: false });
-        }
-      },
-
-      checkAuth: async () => {
-        const token = get().token;
-        if (!token) {
-          delete axios.defaults.headers.common["Authorization"];
-          set({ isAuthenticated: false, user: null });
-          return;
-        }
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        try {
-          const res = await axios.get(`${USER_API}/me`);
-          set({ user: res.data.data.user, isAuthenticated: true });
-        } catch {
-          delete axios.defaults.headers.common["Authorization"];
-          set({ user: null, token: null, isAuthenticated: false });
-        }
-      },
-    }),
-    {
-      name: "topmart-auth",
-      partialize: (state) => ({ token: state.token, user: state.user, isAuthenticated: state.isAuthenticated }),
-      onRehydrateStorage: () => (state) => {
-        if (state?.token) {
-          axios.defaults.headers.common["Authorization"] = `Bearer ${state.token}`;
-        }
-      },
+  register: async (
+    fullName,
+    email,
+    phoneNumber,
+    password,
+    confirmPassword,
+    referralCode
+  ) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await axios.post(
+        `${API_BASE}/register`,
+        {
+          fullName,
+          email,
+          phoneNumber,
+          password,
+          confirmPassword,
+          referralCode,
+        },
+        { withCredentials: true }
+      );
+      set({ isLoading: false });
+      return res.data;
+    } catch (err: any) {
+      set({
+        error: err?.response?.data?.message ?? "Registration failed",
+        isLoading: false,
+      });
+      throw err;
     }
-  )
-);
+  },
 
-if (typeof window !== "undefined") {
-  const store = useAuthStore.getState();
-  if (store.token && !store.isAuthenticated) {
-    store.checkAuth();
-  }
-}
+  login: async (phoneNumber, password) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await axios.post(
+        `${API_BASE}/login`,
+        { phoneNumber, password },
+        { withCredentials: true }
+      );
+
+      const token = res.data?.token;
+      if (token) {
+        localStorage.setItem("token", token);
+      }
+
+      // hydrate immediately
+      await useAuthStore.getState().getCurrentUser();
+      set({ isLoading: false });
+    } catch (err: any) {
+      set({
+        error: err?.response?.data?.message ?? "Login failed",
+        isLoading: false,
+      });
+      throw err;
+    }
+  },
+
+  logout: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      await axios.post(`${API_BASE}/logout`, {}, { withCredentials: true });
+    } finally {
+      localStorage.removeItem("token");
+      set({ user: null, isAuthenticated: false, isLoading: false });
+    }
+  },
+
+  getCurrentUser: async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return null;
+
+      const res = await axios.get(
+        "https://top-mart-api.onrender.com/api/users/me",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        }
+      );
+
+      const user: User = res.data;
+      set({ user, isAuthenticated: true });
+      return user;
+    } catch (err) {
+      set({ error: "Failed to fetch current user" });
+      return null;
+    }
+  },
+}));

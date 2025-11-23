@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
+import { useAuthStore, User } from "@/store/authStore";
 import { BottomNav } from "@/components/bottom-nav";
 import {
   ArrowRight,
@@ -25,11 +25,16 @@ export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  const { user, isAuthenticated, logout } = useAuthStore((state) => ({
-    user: state.user,
-    isAuthenticated: state.isAuthenticated,
-    logout: state.logout,
-  }));
+  const getCurrentUser = useAuthStore((state) => state.getCurrentUser);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const logout = useAuthStore((state) => state.logout);
+
+  useEffect(() => {
+    (async () => {
+      const { getCurrentUser } = useAuthStore.getState();
+      await getCurrentUser();
+    })();
+  }, []);
 
   // redirect if not authenticated
   useEffect(() => {
@@ -38,17 +43,24 @@ export default function ProfilePage() {
     }
   }, [isAuthenticated, router]);
 
-  // assign profile from persisted user
   useEffect(() => {
-    if (!user) return;
-    setProfile({
-      phone: (user as any)?.phoneNumber ?? (user as any)?.phone ?? "Unknown",
-      balance: Number(
-        (user as any)?.balance ?? (user as any)?.account?.balance ?? 0
-      ),
-      uniqueId: (user as any)?.id ?? (user as any)?._id ?? "",
-    });
-  }, [user]);
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    // fetch latest profile from backend
+    (async () => {
+      const currentUser = await getCurrentUser();
+      if (currentUser) {
+        setProfile({
+          phone: currentUser.phone,
+          balance: currentUser.balance,
+          uniqueId: currentUser.uniqueId,
+        });
+      }
+    })();
+  }, [isAuthenticated, router, getCurrentUser]);
 
   const handleLogout = async () => {
     await logout();
