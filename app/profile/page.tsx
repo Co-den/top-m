@@ -129,8 +129,12 @@ export default function ProfilePage() {
         {/* BODY */}
         <div className="px-4 mt-6 space-y-7">
           <Section title="FINANCIAL">
-            <Item icon={<Send size={20} />} text="Withdraw" />
-            <Item icon={<Building2 size={20} />} text="Bank Account" />
+            <Item icon={<Send size={20} />} text="Withdraw" path="/withdraw" />
+            <Item
+              icon={<Building2 size={20} />}
+              text="Bank Account"
+              path="/bank-account"
+            />
           </Section>
 
           <Section title="RECORDS">
@@ -185,13 +189,26 @@ function Section({
 interface ItemProps {
   icon: React.ReactNode;
   text: string;
+  path?: string;
   onClick?: () => void;
 }
 
-function Item({ icon, text, onClick }: ItemProps) {
+function Item({ icon, text, path, onClick }: ItemProps) {
+  const router = useRouter();
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+      return;
+    }
+    if (path) {
+      router.push(path);
+    }
+  };
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       className="w-full flex items-center justify-between py-4 px-4 hover:bg-slate-50 transition"
     >
       <div className="flex items-center space-x-3 text-slate-700">
