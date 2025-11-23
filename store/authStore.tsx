@@ -11,9 +11,9 @@ const USER_API = "https://top-mart-api.onrender.com/api/users";
 
 interface User {
   id: string;
-  fullName: string;
-  email: string;
-  phoneNumber: string;
+  fullName?: string;
+  email?: string;
+  phoneNumber?: string;
 }
 
 interface AuthState {
@@ -38,9 +38,6 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
 
-      // -----------------------------
-      // REGISTER
-      // -----------------------------
       register: async (
         fullName,
         email,
@@ -59,91 +56,49 @@ export const useAuthStore = create<AuthState>()(
             confirmPassword,
             referralCode,
           });
-
           const token = res.data.token;
           const user = res.data.data.user;
-
-          axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-          set({
-            user,
-            token,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-
+          if (token) axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+          set({ user, token, isAuthenticated: true, isLoading: false });
           return res.data;
         } catch (err: any) {
-          set({
-            error: err?.response?.data?.message || err.message,
-            isLoading: false,
-          });
+          set({ error: err?.response?.data?.message || err.message, isLoading: false });
           throw err;
         }
       },
 
-      // -----------------------------
-      // LOGIN
-      // -----------------------------
       login: async (phoneNumber, password) => {
         set({ isLoading: true, error: null });
         try {
-          const res = await axios.post(`${API}/login`, {
-            phoneNumber,
-            password,
-          });
-
+          const res = await axios.post(`${API}/login`, { phoneNumber, password });
           const token = res.data.token;
           const user = res.data.data.user;
-
-          axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-          set({
-            user,
-            token,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-
+          if (token) axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+          set({ user, token, isAuthenticated: true, isLoading: false });
           return res.data;
         } catch (err: any) {
-          set({
-            error: err?.response?.data?.message || err.message,
-            isLoading: false,
-          });
+          set({ error: err?.response?.data?.message || err.message, isLoading: false });
           throw err;
         }
       },
 
-      // -----------------------------
-      // LOGOUT
-      // -----------------------------
       logout: async () => {
         try {
           await axios.post(`${API}/logout`).catch(() => {});
         } finally {
           delete axios.defaults.headers.common["Authorization"];
-          set({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-          });
+          set({ user: null, token: null, isAuthenticated: false });
         }
       },
 
-      // -----------------------------
-      // CHECK AUTH
-      // -----------------------------
       checkAuth: async () => {
         const token = get().token;
         if (!token) {
-          set({ isAuthenticated: false, user: null });
           delete axios.defaults.headers.common["Authorization"];
+          set({ isAuthenticated: false, user: null });
           return;
         }
-
         axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
         try {
           const res = await axios.get(`${USER_API}/me`);
           set({ user: res.data.data.user, isAuthenticated: true });
@@ -155,25 +110,16 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "topmart-auth",
-      partialize: (state) => ({
-        token: state.token,
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
-      }),
+      partialize: (state) => ({ token: state.token, user: state.user, isAuthenticated: state.isAuthenticated }),
       onRehydrateStorage: () => (state) => {
         if (state?.token) {
-          axios.defaults.headers.common[
-            "Authorization"
-          ] = `Bearer ${state.token}`;
+          axios.defaults.headers.common["Authorization"] = `Bearer ${state.token}`;
         }
       },
     }
   )
 );
 
-// -----------------------------
-// AUTO-CHECK AUTH ON APP LOAD
-// -----------------------------
 if (typeof window !== "undefined") {
   const store = useAuthStore.getState();
   if (store.token && !store.isAuthenticated) {
