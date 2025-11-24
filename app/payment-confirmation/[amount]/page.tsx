@@ -1,7 +1,6 @@
 "use client";
 
-import type React from "react";
-import { useSearchParams } from "next/navigation";
+import React from "react";
 import { useState, useEffect } from "react";
 import { ArrowLeft, Copy, CheckCircle } from "lucide-react";
 import Link from "next/link";
@@ -9,10 +8,9 @@ import { BottomNav } from "@/components/bottom-nav";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-export default function PaymentConfirmationPage() {
-  const searchParams = useSearchParams();
-  const amountParam = searchParams.get("amount");
-  const amount = amountParam ? `₦${amountParam}` : "₦0";
+export default function PaymentConfirmationPage({ params }: { params: Promise<{ amount: string }> }) {
+    const { amount } = React.use(params); 
+  const formattedAmount = `₦${amount}`;
 
   const [user, setUser] = useState<any>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -78,7 +76,7 @@ export default function PaymentConfirmationPage() {
         <div className="max-w-2xl mx-auto w-full px-4 py-6 space-y-6">
           {/* Amount Card */}
           <div className="bg-pink-500 text-white rounded-lg p-8 text-center shadow-sm">
-            <div className="text-5xl font-bold mb-2">{amount}</div>
+            <div className="text-5xl font-bold mb-2">{formattedAmount}</div>
             <p className="text-pink-100 mb-1">
               Use this account for this transaction only!
             </p>

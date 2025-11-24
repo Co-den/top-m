@@ -26,7 +26,8 @@ export default function RechargePage() {
     }
 
     // Redirect to confirm page with amount in query string
-    router.push(`/payment-confirmation?amount=${activeAmount}`);
+   router.push(`/payment-confirmation/${activeAmount}`);
+
   };
 
   return (
