@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -85,9 +86,9 @@ export default function UpdateBankPage() {
         }
       );
 
-      setMessage(res.data.message ?? "Bank details updated successfully");
+      toast.success(res.data.message ?? "Bank details updated successfully");
     } catch (err: any) {
-      setMessage(
+      toast.error(
         err?.response?.data?.message ?? "Failed to update bank details"
       );
     } finally {
@@ -99,7 +100,7 @@ export default function UpdateBankPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-pink-600 text-white px-4 py-6 flex items-center">
-        <Link href="/withdraw" className="flex items-center">
+        <Link href="/profile" className="flex items-center">
           <ArrowLeft className="w-6 h-6" />
         </Link>
         <h1 className="text-xl font-bold flex-1 text-center">Update Bank</h1>
@@ -153,7 +154,7 @@ export default function UpdateBankPage() {
           <Button
             onClick={handleSaveBank}
             disabled={loading}
-            className="w-full bg-pink-600 hover:bg-pink-700 text-white py-3 rounded-lg font-bold text-lg mt-6"
+            className="w-full bg-pink-600 hover:bg-pink-700 text-white py-6 rounded-lg font-bold text-lg mt-6"
           >
             {loading ? "Saving..." : "Save Bank Details"}
           </Button>

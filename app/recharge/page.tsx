@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/bottom-nav";
 
 const PRESET_AMOUNTS = [
   3000, 6000, 10000, 15000, 30000, 50000, 100000, 200000, 300000, 500000,
-  700000, 1000000, 
+  700000, 1000000,
 ];
 
 export default function RechargePage() {
@@ -24,7 +24,9 @@ export default function RechargePage() {
       alert("Please select an amount of at least ₦3,000");
       return;
     }
-    console.log("Proceeding with recharge of ₦", activeAmount);
+
+    // Redirect to confirm page with amount in query string
+    router.push(`/payment-confirmation?amount=${activeAmount}`);
   };
 
   return (

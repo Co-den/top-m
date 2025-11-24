@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Phone, Lock, User, Mail } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { toast } from "react-hot-toast";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -42,9 +43,10 @@ export default function SignupPage() {
         confirmPassword,
         referralCode
       );
-      router.push("/home");
+      toast.success("Account created successfully!");
+      router.push("/login");
     } catch (err) {
-      console.log("Signup failed:", err);
+      toast.error("Signup failed. Please try again.");
     }
   };
 

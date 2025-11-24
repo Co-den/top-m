@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BottomNav } from "@/components/bottom-nav";
@@ -10,7 +11,6 @@ import axios from "axios";
 export default function WithdrawPage() {
   const [user, setUser] = useState<any>(null);
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -23,7 +23,7 @@ export default function WithdrawPage() {
             withCredentials: true,
           }
         );
-        setUser(res.data); // ✅ backend returns { phone, uniqueId, balance, bankAccount }
+        setUser(res.data);
       } catch (err) {
         console.error("Failed to fetch user profile", err);
       }
@@ -43,14 +43,32 @@ export default function WithdrawPage() {
         }
       );
 
-      setMessage(res.data.message);
-      // refresh balance after withdrawal
+      toast.success(res.data.message, {
+        style: {
+          background: "#ec4899",
+          color: "#fff",
+          fontWeight: "bold",
+          borderRadius: "0.75rem",
+          padding: "1rem",
+        },
+        icon: "✅",
+      });
+
       setUser((prev: any) => ({
         ...prev,
         balance: res.data.newBalance,
       }));
     } catch (err: any) {
-      setMessage(err?.response?.data?.message ?? "Withdrawal failed");
+      toast.error(err?.response?.data?.message ?? "Withdrawal failed", {
+        style: {
+          background: "#dc2626",
+          color: "#fff",
+          fontWeight: "bold",
+          borderRadius: "0.75rem",
+          padding: "1rem",
+        },
+        icon: "⚠️",
+      });
     }
   };
 
@@ -70,43 +88,46 @@ export default function WithdrawPage() {
       {/* Main Content */}
       <div className="px-4 py-6 max-w-2xl mx-auto">
         {/* Balance Card */}
-        <div className="bg-pink-600 text-white rounded-2xl p-6 mb-6">
+        <div className="bg-pink-600 text-white rounded-2xl p-6 mb-6 shadow-md">
           <p className="text-sm font-medium mb-2">My Balance</p>
           <h2 className="text-4xl font-bold">₦{user?.balance ?? 0}</h2>
         </div>
 
         {/* Account Details */}
-        <div className="bg-white rounded-lg p-6 mb-6 border border-gray-200">
-          <h3 className="text-lg font-bold text-pink-600 mb-4">
-            My Account Details
-          </h3>
+        <div className="bg-white rounded-lg p-6 mb-6 border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-6 h-6 bg-pink-600 rounded-lg flex items-center justify-center text-white text-xs">
+              🏦
+            </div>
+            <h3 className="text-lg font-bold text-pink-600">
+              My Account Details
+            </h3>
+          </div>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm text-gray-600 font-medium">Account Name:</label>
-              <p className="text-gray-800 font-medium">
-                {user?.bankAccount?.accountName ?? "Not set"}
-              </p>
-            </div>
-            <div>
-              <label className="text-sm text-gray-600 font-medium">Account Number:</label>
-              <p className="text-gray-800 font-medium">
-                {user?.bankAccount?.accountNumber ?? "Not set"}
-              </p>
-            </div>
-            <div>
-              <label className="text-sm text-gray-600 font-medium">Bank Name:</label>
-              <p className="text-gray-800 font-medium">
-                {user?.bankAccount?.bankName ?? "Not set"}
-              </p>
-            </div>
+            <p className="text-sm text-gray-600 font-medium">Account Name:</p>
+            <p className="text-gray-800 font-semibold">
+              {user?.bankAccount?.accountName ?? "Not set"}
+            </p>
+            <p className="text-sm text-gray-600 font-medium">Account Number:</p>
+            <p className="text-gray-800 font-semibold">
+              {user?.bankAccount?.accountNumber ?? "Not set"}
+            </p>
+            <p className="text-sm text-gray-600 font-medium">Bank Name:</p>
+            <p className="text-gray-800 font-semibold">
+              {user?.bankAccount?.bankName ?? "Not set"}
+            </p>
           </div>
         </div>
 
         {/* Withdrawal Amount */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200 mb-6">
-          <h3 className="text-lg font-bold mb-4">Withdrawal Amount</h3>
+        <div className="bg-white rounded-lg p-6 border border-gray-200 mb-6 shadow-sm">
+          <h3 className="text-lg font-bold text-pink-600 mb-4">
+            Withdrawal Amount
+          </h3>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">₦</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
+              ₦
+            </span>
             <input
               type="number"
               placeholder="Enter withdrawal amount"
@@ -120,13 +141,39 @@ export default function WithdrawPage() {
         {/* Withdraw Button */}
         <Button
           onClick={handleWithdraw}
-          className="w-full bg-pink-600 hover:bg-pink-700 text-white py-3 rounded-lg font-bold text-lg"
+          className="w-full bg-pink-600 hover:bg-pink-700 text-white py-6 rounded-lg font-bold text-lg"
         >
           Withdraw Funds
         </Button>
 
-        {/* Message */}
-        {message && <p className="mt-4 text-center text-sm text-gray-700">{message}</p>}
+        {/* Info Section */}
+        <div className="mt-6">
+          <div className="bg-white rounded-lg p-6 py-7 shadow-sm">
+            <div className="flex items-start gap-3 mb-4">
+              <AlertCircle
+                size={20}
+                className="text-pink-500 shrink-0 mt-0.5"
+              />
+              <h3 className="font-semibold text-gray-800">
+                Withdrawal Information
+              </h3>
+            </div>
+            <ul className="space-y-3">
+              <li className="flex gap-3 text-gray-700 text-sm">
+                <span className="text-pink-500 font-bold shrink-0">•</span>
+                <span>Withdraw Minimum Amount: ₦1000</span>
+              </li>
+              <li className="flex gap-3 text-gray-700 text-sm">
+                <span className="text-pink-500 font-bold shrink-0">•</span>
+                <span>Withdrawal charges: 10%</span>
+              </li>
+              <li className="flex gap-3 text-gray-700 text-sm">
+                <span className="text-pink-500 font-bold shrink-0">•</span>
+                <span>Withdrawals processed within 24 hours</span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       <BottomNav />

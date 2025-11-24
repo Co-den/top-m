@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Phone, Lock } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { toast } from "react-hot-toast";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  // Ensure we render a string (not a function or other non-serializable value)
+  
   const displayError =
     localError ?? (typeof error === "string" ? error : error ? String(error) : null);
 
@@ -31,15 +32,14 @@ export default function LoginPage() {
     e.preventDefault();
     setLocalError(null);
     if (!phoneNumber.trim() || !password) {
-      setLocalError("Please enter phone number and password.");
+      toast.error("Please enter phone number and password.");
       return;
     }
     try {
       await login(phoneNumber, password);
       router.push("/home");
     } catch (err: any) {
-      console.error("login failed:", err);
-      setLocalError(err?.message ?? "Login failed. Please try again.");
+      toast.error(err?.message ?? "Login failed. Please try again.");
     }
   };
 
