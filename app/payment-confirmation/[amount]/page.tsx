@@ -8,16 +8,21 @@ import { BottomNav } from "@/components/bottom-nav";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-export default function PaymentConfirmationPage({ params }: { params: Promise<{ amount: string }> }) {
-    const { amount } = React.use(params); 
+export default function PaymentConfirmationPage({
+  params,
+}: {
+  params: Promise<{ amount: string }>;
+}) {
+  const { amount } = React.use(params);
   const formattedAmount = `₦${amount}`;
 
   const [user, setUser] = useState<any>(null);
+  const [timeLeft, setTimeLeft] = useState(600);
   const [fileName, setFileName] = useState<string | null>(null);
   const [senderName, setSenderName] = useState("");
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const expiryTime = "10 minutes";
+  
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -37,6 +42,17 @@ export default function PaymentConfirmationPage({ params }: { params: Promise<{ 
     };
     fetchUser();
   }, []);
+  // Countdown timer
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timeLeft]);
+
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -80,7 +96,9 @@ export default function PaymentConfirmationPage({ params }: { params: Promise<{ 
             <p className="text-pink-100 mb-1">
               Use this account for this transaction only!
             </p>
-            <p className="text-pink-100">Account expires in 10 minutes</p>
+            <p className="text-pink-100">
+              Account expires in {minutes}:{seconds.toString().padStart(2, "0")}
+            </p>
           </div>
 
           {/* Payment Details Card */}
@@ -143,7 +161,8 @@ export default function PaymentConfirmationPage({ params }: { params: Promise<{ 
             {/* Expiry Alert */}
             <div className="bg-pink-50 border border-pink-200 rounded p-4 text-center">
               <p className="text-pink-600 text-sm font-medium">
-                Please note that payment expires in {expiryTime}
+                Please note that payment expires in {minutes}:
+                {seconds.toString().padStart(2, "0")}
               </p>
             </div>
           </div>
