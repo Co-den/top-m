@@ -118,7 +118,11 @@ export default function ProfilePage() {
           </Section>
 
           <Section title="ACCOUNT">
-            <Item icon={<Lock size={20} />} text="Change Password" />
+            <Item
+              icon={<Lock size={20} />}
+              text="Change Password"
+              path="/change-password"
+            />
             <Item
               icon={<LogOut size={20} />}
               text="Logout"
