@@ -2,10 +2,12 @@
 import type React from "react";
 import toast from "react-hot-toast";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function ChangePasswordPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -46,8 +48,14 @@ export default function ChangePasswordPage() {
         "New password must be different from current password";
     }
 
-    toast.error(Object.values(newErrors).join("\n"));
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length) {
+      toast.error(Object.values(newErrors).join("\n"));
+      setErrors(newErrors);
+      return false;
+    }
+
+    setErrors({});
+    return true;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,20 +73,42 @@ export default function ChangePasswordPage() {
 
     setLoading(true);
     try {
-      // Simulate API call - Replace with your actual API endpoint
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const res = await fetch(
+        "https://top-mart-api.onrender.com/api/auth/change-password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            currentPassword: formData.currentPassword,
+            newPassword: formData.newPassword,
+            confirmPassword: formData.confirmPassword,
+          }),
+        }
+      );
 
-      setSuccess(true);
-      setFormData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
+      const data = await res.json().catch(() => ({}));
 
-      // Reset success message after 3 seconds
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (error) {
-      toast.error("Failed to change password. Please try again.");
+      if (!res.ok) {
+        const msg = data?.message || data?.error || "Failed to change password";
+        toast.error(msg);
+        setErrors((prev) => ({ ...prev, submit: msg }));
+      } else {
+        toast.success(data?.message || "Password changed successfully");
+        setSuccess(true);
+        setFormData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        // redirect to login after brief delay to show toast
+        setTimeout(() => router.push("/login"), 1200);
+      }
+    } catch (error: any) {
+      toast.error("Network error. Please try again.");
+      setErrors((prev) => ({ ...prev, submit: "Network error" }));
     } finally {
       setLoading(false);
     }
