@@ -22,8 +22,6 @@ export default function PaymentConfirmationPage({
   const [senderName, setSenderName] = useState("");
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  
-
   useEffect(() => {
     const fetchUser = async () => {
       try {
