@@ -39,11 +39,14 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch("http://localhost:8000/api/admin/pending-users", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      const response = await fetch(
+        "https://top-mart-api.onrender.com/api/admin/pending-users",
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to fetch investment requests");
@@ -69,7 +72,7 @@ export default function AdminDashboard() {
     try {
       // First verify authentication
       const authResponse = await fetch(
-        "http://localhost:8000/api/admin/verify",
+        "https://top-mart-api.onrender.com/api/admin/verify",
         {
           method: "GET",
           headers: { "Content-Type": "application/json" },
@@ -96,7 +99,7 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:8000/api/admin/logout", {
+      await fetch("https://top-mart-api.onrender.com/api/admin/logout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -118,11 +121,14 @@ export default function AdminDashboard() {
 
   const handleApprove = async (requestId: string) => {
     try {
-      await fetch(`http://localhost:8000/api/admin/approve/${requestId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      await fetch(
+        `https://top-mart-api.onrender.com/api/admin/approve/${requestId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
       setRequests((prev) =>
         prev.map((r) => (r.id === requestId ? { ...r, status: "approved" } : r))
       );
@@ -136,12 +142,15 @@ export default function AdminDashboard() {
 
   const handleReject = async (requestId: string, reason: string) => {
     try {
-      await fetch(`http://localhost:8000/api/admin/reject/${requestId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ reason }),
-      });
+      await fetch(
+        `https://top-mart-api.onrender.com/api/admin/reject/${requestId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ reason }),
+        }
+      );
       setRequests((prev) =>
         prev.map((r) => (r.id === requestId ? { ...r, status: "rejected" } : r))
       );
@@ -191,7 +200,9 @@ export default function AdminDashboard() {
             {adminUser && (
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="text-pink-500 font-medium">{adminUser.fullName}</p>
+                  <p className="text-pink-500 font-medium">
+                    {adminUser.fullName}
+                  </p>
                   <p className="text-slate-400 text-sm">{adminUser.email}</p>
                 </div>
                 <Button

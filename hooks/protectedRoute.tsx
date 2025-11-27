@@ -19,7 +19,7 @@ export default function ProtectedAdminRoute({
 
   const checkAuth = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/admin/verify", {
+      const response = await fetch("https://top-mart-api.onrender.com/api/admin/verify", {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

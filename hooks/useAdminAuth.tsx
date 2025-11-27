@@ -23,7 +23,7 @@ export function useAdminAuth(): UseAdminAuthReturn {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/admin/verify", {
+      const response = await fetch("https://top-mart-api.onrender.com/api/admin/verify", {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -48,7 +48,7 @@ export function useAdminAuth(): UseAdminAuthReturn {
 
   const logout = async () => {
     try {
-      await fetch("http://localhost:8000/api/admin/logout", {
+      await fetch("https://top-mart-api.onrender.com/api/admin/logout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
