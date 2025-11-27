@@ -272,7 +272,7 @@ export default function AdminAuthPage() {
                         email: e.target.value,
                       })
                     }
-                    className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
                     placeholder="admin@example.com"
                   />
                 </div>
@@ -293,7 +293,7 @@ export default function AdminAuthPage() {
                         password: e.target.value,
                       })
                     }
-                    className="w-full pl-10 pr-12 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
                     placeholder="••••••••"
                   />
                   <button
@@ -324,7 +324,7 @@ export default function AdminAuthPage() {
                         confirmPassword: e.target.value,
                       })
                     }
-                    className="w-full pl-10 pr-12 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
                     placeholder="••••••••"
                   />
                   <button
@@ -356,7 +356,7 @@ export default function AdminAuthPage() {
                       })
                     }
                     onKeyPress={(e) => handleKeyPress(e, handleRegister)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
                     placeholder="Enter admin code"
                   />
                 </div>
