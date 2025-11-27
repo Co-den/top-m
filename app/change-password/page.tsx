@@ -1,10 +1,10 @@
 "use client";
-import type React from "react";
-import toast from "react-hot-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
+import { usePasswordValidation } from "@/hooks/userPasswordValidation";
 
 export default function ChangePasswordPage() {
   const router = useRouter();
@@ -20,43 +20,19 @@ export default function ChangePasswordPage() {
     confirm: false,
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+  // custom hook
+  const { errors, setErrors, validate } = usePasswordValidation();
 
-    if (!formData.currentPassword) {
-      newErrors.currentPassword = "Current password is required";
+  // redirect after success
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => router.push("/login"), 1200);
+      return () => clearTimeout(timer);
     }
-
-    if (!formData.newPassword) {
-      newErrors.newPassword = "New password is required";
-    } else if (formData.newPassword.length < 8) {
-      newErrors.newPassword = "Password must be at least 8 characters";
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password";
-    } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-
-    if (formData.currentPassword === formData.newPassword) {
-      newErrors.newPassword =
-        "New password must be different from current password";
-    }
-
-    if (Object.keys(newErrors).length) {
-      toast.error(Object.values(newErrors).join("\n"));
-      setErrors(newErrors);
-      return false;
-    }
-
-    setErrors({});
-    return true;
-  };
+  }, [success, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -68,8 +44,7 @@ export default function ChangePasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) return;
+    if (!validate(formData)) return;
 
     setLoading(true);
     try {
@@ -77,15 +52,9 @@ export default function ChangePasswordPage() {
         "https://top-mart-api.onrender.com/api/auth/change-password",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({
-            currentPassword: formData.currentPassword,
-            newPassword: formData.newPassword,
-            confirmPassword: formData.confirmPassword,
-          }),
+          body: JSON.stringify(formData),
         }
       );
 
@@ -98,15 +67,9 @@ export default function ChangePasswordPage() {
       } else {
         toast.success(data?.message || "Password changed successfully");
         setSuccess(true);
-        setFormData({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
-        // redirect to login after brief delay to show toast
-        setTimeout(() => router.push("/login"), 1200);
+        setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
       }
-    } catch (error: any) {
+    } catch {
       toast.error("Network error. Please try again.");
       setErrors((prev) => ({ ...prev, submit: "Network error" }));
     } finally {
@@ -115,7 +78,7 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -254,7 +217,7 @@ export default function ChangePasswordPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 rounded-lg transition duration-200 mt-6"
+            className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-6 rounded-lg transition duration-200 mt-6"
           >
             {loading ? "Updating..." : "Change Password"}
           </Button>
