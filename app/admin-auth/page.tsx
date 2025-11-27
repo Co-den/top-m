@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Shield, Lock, Mail, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -42,12 +43,15 @@ export default function AdminAuthPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("https://top-mart-api.onrender.com/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(loginForm),
-      });
+      const response = await fetch(
+        "https://top-mart-api.onrender.com/api/admin/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(loginForm),
+        }
+      );
 
       const data = await response.json();
 
@@ -81,17 +85,20 @@ export default function AdminAuthPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("https://top-mart-api.onrender.com/api/admin/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          fullName: registerForm.fullName,
-          email: registerForm.email,
-          password: registerForm.password,
-          adminCode: registerForm.adminCode,
-        }),
-      });
+      const response = await fetch(
+        "https://top-mart-api.onrender.com/api/admin/register",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            fullName: registerForm.fullName,
+            email: registerForm.email,
+            password: registerForm.password,
+            adminCode: registerForm.adminCode,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -115,21 +122,21 @@ export default function AdminAuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-pink-500/20 rounded-full mb-4">
             <Shield className="w-8 h-8 text-pink-500" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Admin Portal</h1>
-          <p className="text-slate-400">
+          <h1 className="text-3xl font-bold text-black mb-2">Admin Portal</h1>
+          <p className="text-black">
             {isLogin ? "Sign in to manage investments" : "Create admin account"}
           </p>
         </div>
 
         {/* Auth Card */}
-        <div className="bg-slate-900/50 backdrop-blur-lg rounded-2xl border border-slate-800 p-8 shadow-2xl">
+        <div className="bg-white rounded-lg shadow-lg p-8 md:p-10">
           {/* Tab Switcher */}
           <div className="flex gap-2 mb-6 p-1 bg-slate-800/50 rounded-lg">
             <button
@@ -176,33 +183,33 @@ export default function AdminAuthPage() {
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
+                  <Input
                     type="email"
                     value={loginForm.email}
                     onChange={(e) =>
                       setLoginForm({ ...loginForm, email: e.target.value })
                     }
                     onKeyPress={(e) => handleKeyPress(e, handleLogin)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
                     placeholder="admin@example.com"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-black mb-2">
                   Password
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
+                  <Input
                     type={showPassword ? "text" : "password"}
                     value={loginForm.password}
                     onChange={(e) =>
                       setLoginForm({ ...loginForm, password: e.target.value })
                     }
                     onKeyPress={(e) => handleKeyPress(e, handleLogin)}
-                    className="w-full pl-10 pr-12 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-800"
                     placeholder="••••••••"
                   />
                   <button
