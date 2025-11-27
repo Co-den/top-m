@@ -242,7 +242,7 @@ export default function AdminAuthPage() {
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
+                  <Input
                     type="text"
                     value={registerForm.fullName}
                     onChange={(e) =>
@@ -251,7 +251,7 @@ export default function AdminAuthPage() {
                         fullName: e.target.value,
                       })
                     }
-                    className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
                     placeholder="John Doe"
                   />
                 </div>
@@ -284,7 +284,7 @@ export default function AdminAuthPage() {
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
+                  <Input
                     type={showPassword ? "text" : "password"}
                     value={registerForm.password}
                     onChange={(e) =>
