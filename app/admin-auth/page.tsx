@@ -42,7 +42,7 @@ export default function AdminAuthPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/admin/login", {
+      const response = await fetch("https://top-mart-api.onrender.com/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -81,7 +81,7 @@ export default function AdminAuthPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/admin/register", {
+      const response = await fetch("https://top-mart-api.onrender.com/api/admin/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
