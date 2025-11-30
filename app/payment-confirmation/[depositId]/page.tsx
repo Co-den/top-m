@@ -2,74 +2,95 @@
 
 import React from "react";
 import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { ArrowLeft, Copy, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { BottomNav } from "@/components/bottom-nav";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-export default function PaymentConfirmationPage({
-  params,
-}: {
-  params: Promise<{ amount: string }>;
-}) {
-  const { amount } = React.use(params);
-  const formattedAmount = `₦${amount}`;
+export default function PaymentConfirmationPage() {
+  const { depositId } = useParams<{ depositId: string }>();
 
-  const [user, setUser] = useState<any>(null);
-  const [timeLeft, setTimeLeft] = useState(600);
+  const [deposit, setDeposit] = useState<any>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [senderName, setSenderName] = useState("");
-  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [minutes, setMinutes] = useState(10);
+  const [seconds, setSeconds] = useState(0);
+
+  const amount = deposit?.amount || 0;
+
+  const user = deposit?.user;
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchDeposit = async () => {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get(
-          "https://top-mart-api.onrender.com/api/users/me",
+          `https://top-mart-api.onrender.com/api/deposits/${depositId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
           }
         );
-        setUser(res.data);
+        setDeposit(res.data.deposit);
       } catch (err) {
-        console.error("Failed to fetch user profile", err);
+        console.error("Failed to fetch deposit", err);
       }
     };
-    fetchUser();
-  }, []);
-  // Countdown timer
+    fetchDeposit();
+  }, [depositId]);
+
+  // countdown
   useEffect(() => {
-    if (timeLeft <= 0) return;
+    let timeLeft = 600;
     const interval = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
+      timeLeft -= 1;
+      setMinutes(Math.floor(timeLeft / 60));
+      setSeconds(timeLeft % 60);
+      if (timeLeft <= 0) clearInterval(interval);
     }, 1000);
     return () => clearInterval(interval);
-  }, [timeLeft]);
+  }, []);
 
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-
-  const handleCopy = (text: string, field: string) => {
+  const handleCopy = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
-    toast.success(
-      `${field === "amount" ? "Amount" : "Account number"} copied!`
-    );
+    toast.success(`${type} copied to clipboard`);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFileName(e.target.files[0].name);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file || !senderName) {
+      toast.error("Please upload proof and enter sender name");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("senderName", senderName);
+
+      await axios.post(
+        `https://top-mart-api.onrender.com/api/deposits/${depositId}/proof`,
+        formData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      toast.success("Proof submitted successfully!");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to submit proof");
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Submitting:", { fileName, senderName });
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setFileName(selectedFile.name);
+    }
   };
 
   return (
@@ -90,7 +111,9 @@ export default function PaymentConfirmationPage({
         <div className="max-w-2xl mx-auto w-full px-4 py-6 space-y-6">
           {/* Amount Card */}
           <div className="bg-pink-500 text-white rounded-lg p-8 text-center shadow-sm">
-            <div className="text-5xl font-bold mb-2">{formattedAmount}</div>
+            <div className="text-5xl font-bold mb-2">
+              ₦{deposit ? deposit.amount.toLocaleString() : "0"}
+            </div>
             <p className="text-pink-100 mb-1">
               Use this account for this transaction only!
             </p>

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, AlertCircle } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 const PRESET_AMOUNTS = [
   3000, 6000, 10000, 15000, 30000, 50000, 100000, 200000, 300000, 500000,
@@ -19,15 +21,30 @@ export default function RechargePage() {
     ? Number.parseInt(customAmount)
     : selectedAmount;
 
-  const handleRechargeNow = () => {
+  const handleRechargeNow = async () => {
     if (!activeAmount || activeAmount < 3000) {
-      alert("Please select an amount of at least ₦3,000");
+      toast.error("Please select an amount of at least ₦3,000");
       return;
     }
 
-    // Redirect to confirm page with amount in query string
-   router.push(`/payment-confirmation/${activeAmount}`);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.post(
+        "https://top-mart-api.onrender.com/api/deposits/initiate",
+        { amount: activeAmount },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
+      const { deposit } = res.data;
+
+      // Redirect with depositId, not amount
+      router.push(`/payment-confirmation/${deposit._id}`);
+    } catch (err: any) {
+      console.error("Deposit init error", err.response?.data || err.message);
+      toast.error(err.response?.data?.message || "Failed to initiate deposit");
+    }
   };
 
   return (
@@ -58,7 +75,6 @@ export default function RechargePage() {
                 <button
                   key={amount}
                   onClick={() => {
-                    // mark the preset as selected and populate the input
                     setSelectedAmount(amount);
                     setCustomAmount(String(amount));
                   }}

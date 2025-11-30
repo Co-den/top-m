@@ -16,7 +16,6 @@ export interface User {
     accountNumber: string;
     accountName: string;
   } | null;
-
 }
 
 interface AuthState {
@@ -120,19 +119,20 @@ export const useAuthStore = create<AuthState>((set) => ({
       const token = localStorage.getItem("token");
       if (!token) return null;
 
-      const res = await axios.get(
-        "https://top-mart-api.onrender.com/api/users/me",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        }
-      );
+      const res = await axios.get(`${CURRENT_USER}/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
 
       const user: User = res.data;
       set({ user, isAuthenticated: true });
       return user;
     } catch (err) {
-      set({ error: "Failed to fetch current user" });
+      set({
+        user: null,
+        isAuthenticated: false,
+        error: "Failed to fetch current user",
+      });
       return null;
     }
   },
