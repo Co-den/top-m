@@ -95,6 +95,7 @@ export default function AdminAuthPage() {
             fullName: registerForm.fullName,
             email: registerForm.email,
             password: registerForm.password,
+            confirmPassword: registerForm.confirmPassword,
             adminCode: registerForm.adminCode,
           }),
         }
