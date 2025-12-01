@@ -15,7 +15,7 @@ interface RegisterFormData {
   email: string;
   password: string;
   confirmPassword: string;
-  adminCode: string;
+  accessCode: string;
 }
 
 export default function AdminAuthPage() {
@@ -35,7 +35,7 @@ export default function AdminAuthPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    adminCode: "",
+    accessCode: "",
   });
 
   const handleLogin = async () => {
@@ -96,7 +96,7 @@ export default function AdminAuthPage() {
             email: registerForm.email,
             password: registerForm.password,
             confirmPassword: registerForm.confirmPassword,
-            adminCode: registerForm.adminCode,
+            accessCode: registerForm.accessCode,
           }),
         }
       );
@@ -349,11 +349,11 @@ export default function AdminAuthPage() {
                   <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <Input
                     type="text"
-                    value={registerForm.adminCode}
+                    value={registerForm.accessCode}
                     onChange={(e) =>
                       setRegisterForm({
                         ...registerForm,
-                        adminCode: e.target.value,
+                        accessCode: e.target.value,
                       })
                     }
                     onKeyPress={(e) => handleKeyPress(e, handleRegister)}
