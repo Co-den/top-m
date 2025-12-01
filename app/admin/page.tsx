@@ -40,7 +40,7 @@ export default function AdminDashboard() {
       setLoading(true);
       setError(null);
       const response = await fetch(
-        "https://top-mart-api.onrender.com/api/admin/pending-users",
+        "https://top-mart-api.onrender.com/api/approval/pending-users",
         {
           method: "GET",
           headers: { "Content-Type": "application/json" },
@@ -122,7 +122,7 @@ export default function AdminDashboard() {
   const handleApprove = async (requestId: string) => {
     try {
       await fetch(
-        `https://top-mart-api.onrender.com/api/admin/approve/${requestId}`,
+        `https://top-mart-api.onrender.com/api/approval/approve/${requestId}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
