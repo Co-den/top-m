@@ -34,7 +34,7 @@ export default function AdminDashboard() {
     email: string;
   } | null>(null);
 
-  // Fetch investment requests from backend
+  // Fetch pending users from backend
   const fetchRequests = async () => {
     try {
       setLoading(true);
@@ -49,7 +49,7 @@ export default function AdminDashboard() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch investment requests");
+        throw new Error("Failed to fetch pending requests");
       }
 
       const data = await response.json();
@@ -156,7 +156,7 @@ export default function AdminDashboard() {
       );
       setIsModalOpen(false);
       // Optionally refetch to ensure data is in sync
-      // await fetchRequests();
+      await fetchRequests();
     } catch (err) {
       console.error("Failed to reject:", err);
     }
