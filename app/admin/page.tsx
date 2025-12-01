@@ -293,15 +293,11 @@ export default function AdminDashboard() {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
                       User Name
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
-                      Investment Plan
-                    </th>
+                    
                     <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
                       Amount
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
-                      Expected Return
-                    </th>
+                    
                     <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
                       Submitted
                     </th>

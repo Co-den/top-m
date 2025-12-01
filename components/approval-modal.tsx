@@ -158,29 +158,16 @@ export default function ApprovalModal({
           {/* Investment Details */}
           <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
             <h3 className="text-sm font-semibold text-slate-300 mb-4">
-              Investment Details
+              Deposit Details
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-slate-400 text-sm">Investment Plan</p>
-                <p className="text-white font-medium">{request.plan}</p>
-              </div>
-              <div>
-                <p className="text-slate-400 text-sm">Duration</p>
-                <p className="text-white font-medium">{request.planDuration}</p>
-              </div>
-              <div>
-                <p className="text-slate-400 text-sm">Investment Amount</p>
+                <p className="text-slate-400 text-sm">Deposit Amount</p>
                 <p className="text-white font-medium text-lg">
                   ₦{request.amount.toLocaleString()}
                 </p>
               </div>
-              <div>
-                <p className="text-slate-400 text-sm">Expected Return</p>
-                <p className="text-emerald-400 font-semibold text-lg">
-                  {request.expectedReturn}
-                </p>
-              </div>
+              
             </div>
           </div>
 
