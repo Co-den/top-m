@@ -293,11 +293,11 @@ export default function AdminDashboard() {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
                       User Name
                     </th>
-                    
+
                     <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
                       Amount
                     </th>
-                    
+
                     <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
                       Submitted
                     </th>
@@ -309,37 +309,47 @@ export default function AdminDashboard() {
                     </th>
                   </tr>
                 </thead>
+
                 <tbody className="divide-y divide-slate-800">
-                  {filteredRequests.map((request) => (
-                    <tr
-                      key={request.id}
-                      className="hover:bg-slate-800/50 transition"
-                    >
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-white font-medium">
-                            {request.userName}
-                          </p>
-                          <p className="text-slate-400 text-sm">
-                            {request.email}
-                          </p>
-                        </div>
+                  {filteredRequests.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="px-6 py-12 text-center text-slate-400"
+                      >
+                        No requests found with the selected filter.
                       </td>
-                      
-                      <td className="px-6 py-4 text-white font-semibold">
-                        ₦{request.amount.toLocaleString()}
-                      </td>
-                      
-                      <td className="px-6 py-4 text-slate-400 text-sm">
-                        {request.submittedDate}
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge status={request.status} />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          {request.status === "pending" && (
-                            <>
+                    </tr>
+                  ) : (
+                    filteredRequests.map((request) => (
+                      <tr
+                        key={request.id}
+                        className="hover:bg-slate-800/50 transition"
+                      >
+                        <td className="px-6 py-4">
+                          <div>
+                            <p className="text-white font-medium">
+                              {request.userName}
+                            </p>
+                            <p className="text-slate-400 text-sm">
+                              {request.email}
+                            </p>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4 text-white font-semibold">
+                          ₦{request.amount.toLocaleString()}
+                        </td>
+
+                        <td className="px-6 py-4 text-slate-400 text-sm">
+                          {request.submittedDate}
+                        </td>
+                        <td className="px-6 py-4">
+                          <StatusBadge status={request.status} />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            {request.status === "pending" && (
                               <Button
                                 size="sm"
                                 onClick={() => {
@@ -350,36 +360,28 @@ export default function AdminDashboard() {
                               >
                                 Review
                               </Button>
-                            </>
-                          )}
-                          {request.status !== "pending" && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setSelectedRequest(request);
-                                setIsModalOpen(true);
-                              }}
-                              className="text-slate-400 h-8"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            )}
+                            {request.status !== "pending" && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedRequest(request);
+                                  setIsModalOpen(true);
+                                }}
+                                className="text-slate-400 h-8"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
-
-            {filteredRequests.length === 0 && (
-              <div className="px-6 py-12 text-center">
-                <p className="text-slate-400">
-                  No requests found with the selected filter.
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Approval Modal */}

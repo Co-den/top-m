@@ -87,7 +87,7 @@ export default function ApprovalModal({
         {/* Header */}
         <div className="sticky top-0 bg-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-bold text-white">
-            Investment Plan Review
+            Deposit Review
           </h2>
           <button
             onClick={onClose}
