@@ -15,8 +15,7 @@ interface InvestmentRequest {
   paymentProof: string;
   status: "pending" | "approved" | "rejected";
   submittedDate: string;
-  planDuration: string;
-  expectedReturn: string;
+
 }
 
 interface ApprovalModalProps {
