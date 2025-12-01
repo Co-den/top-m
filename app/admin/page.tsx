@@ -325,18 +325,11 @@ export default function AdminDashboard() {
                           </p>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="text-white">{request.plan}</span>
-                        <p className="text-slate-400 text-sm">
-                          {request.planDuration}
-                        </p>
-                      </td>
+                      
                       <td className="px-6 py-4 text-white font-semibold">
                         ₦{request.amount.toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 text-emerald-400 font-medium">
-                        {request.expectedReturn}
-                      </td>
+                      
                       <td className="px-6 py-4 text-slate-400 text-sm">
                         {request.submittedDate}
                       </td>
