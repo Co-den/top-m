@@ -5,7 +5,7 @@ import { X, Download, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/api";
 
-interface InvestmentRequest {
+interface DepositRequest {
   id: string;
   userId: string;
   userName: string;
@@ -20,7 +20,7 @@ interface InvestmentRequest {
 
 interface ApprovalModalProps {
   isOpen: boolean;
-  request: InvestmentRequest;
+  request: DepositRequest;
   onApprove: () => void;
   onReject: (reason: string) => void;
   onClose: () => void;

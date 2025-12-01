@@ -5,7 +5,7 @@ import { CheckCircle2, XCircle, Eye, Filter, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ApprovalModal from "@/components/approval-modal";
 
-interface InvestmentRequest {
+interface DepositRequest {
   id: string;
   userId: string;
   userName: string;
@@ -15,14 +15,13 @@ interface InvestmentRequest {
   paymentProof: string;
   status: "pending" | "approved" | "rejected";
   submittedDate: string;
-  planDuration: string;
-  expectedReturn: string;
+  
 }
 
 export default function AdminDashboard() {
-  const [requests, setRequests] = useState<InvestmentRequest[]>([]);
+  const [requests, setRequests] = useState<DepositRequest[]>([]);
   const [selectedRequest, setSelectedRequest] =
-    useState<InvestmentRequest | null>(null);
+    useState<DepositRequest | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<
     "all" | "pending" | "approved" | "rejected"
@@ -110,19 +109,19 @@ export default function AdminDashboard() {
     }
   };
 
-  const pendingRequests = requests.filter((r) => r.status === "pending");
-  const approvedCount = requests.filter((r) => r.status === "approved").length;
-  const rejectedCount = requests.filter((r) => r.status === "rejected").length;
+  const pendingRequests = requests.filter((d) => d.status === "pending");
+  const approvedCount = requests.filter((d) => d.status === "approved").length;
+  const rejectedCount = requests.filter((d) => d.status === "rejected").length;
 
   const filteredRequests =
     filterStatus === "all"
       ? requests
-      : requests.filter((r) => r.status === filterStatus);
+      : requests.filter((d) => d.status === filterStatus);
 
-  const handleApprove = async (requestId: string) => {
+  const handleApprove = async (depositId: string) => {
     try {
       await fetch(
-        `https://top-mart-api.onrender.com/api/approval/approve/${requestId}`,
+        `https://top-mart-api.onrender.com/api/approval/${depositId}/approve`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -130,7 +129,7 @@ export default function AdminDashboard() {
         }
       );
       setRequests((prev) =>
-        prev.map((r) => (r.id === requestId ? { ...r, status: "approved" } : r))
+        prev.map((d) => (d.id === depositId ? { ...d, status: "approved" } : d))
       );
       setIsModalOpen(false);
       // Optionally refetch to ensure data is in sync
@@ -140,10 +139,10 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleReject = async (requestId: string, reason: string) => {
+  const handleReject = async (depositId: string, reason: string) => {
     try {
       await fetch(
-        `https://top-mart-api.onrender.com/api/admin/reject/${requestId}`,
+        `https://top-mart-api.onrender.com/api/approval/${depositId}/reject`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -152,7 +151,7 @@ export default function AdminDashboard() {
         }
       );
       setRequests((prev) =>
-        prev.map((r) => (r.id === requestId ? { ...r, status: "rejected" } : r))
+        prev.map((d) => (d.id === depositId ? { ...d, status: "rejected" } : d))
       );
       setIsModalOpen(false);
       // Optionally refetch to ensure data is in sync
@@ -321,39 +320,39 @@ export default function AdminDashboard() {
                       </td>
                     </tr>
                   ) : (
-                    filteredRequests.map((request) => (
+                    filteredRequests.map((deposit) => (
                       <tr
-                        key={request.id}
+                        key={deposit.id}
                         className="hover:bg-slate-800/50 transition"
                       >
                         <td className="px-6 py-4">
                           <div>
                             <p className="text-white font-medium">
-                              {request.userName}
+                              {deposit.userName}
                             </p>
                             <p className="text-slate-400 text-sm">
-                              {request.email}
+                              {deposit.email}
                             </p>
                           </div>
                         </td>
 
                         <td className="px-6 py-4 text-white font-semibold">
-                          ₦{request.amount.toLocaleString()}
+                          ₦{deposit.amount.toLocaleString()}
                         </td>
 
                         <td className="px-6 py-4 text-slate-400 text-sm">
-                          {request.submittedDate}
+                          {deposit.submittedDate}
                         </td>
                         <td className="px-6 py-4">
-                          <StatusBadge status={request.status} />
+                          <StatusBadge status={deposit.status} />
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            {request.status === "pending" && (
+                            {deposit.status === "pending" && (
                               <Button
                                 size="sm"
                                 onClick={() => {
-                                  setSelectedRequest(request);
+                                  setSelectedRequest(deposit);
                                   setIsModalOpen(true);
                                 }}
                                 className="bg-pink-500 hover:bg-pink-600 text-white h-8 px-3"
@@ -361,12 +360,12 @@ export default function AdminDashboard() {
                                 Review
                               </Button>
                             )}
-                            {request.status !== "pending" && (
+                            {deposit.status !== "pending" && (
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => {
-                                  setSelectedRequest(request);
+                                  setSelectedRequest(deposit);
                                   setIsModalOpen(true);
                                 }}
                                 className="text-slate-400 h-8"
