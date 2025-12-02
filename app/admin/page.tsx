@@ -117,8 +117,17 @@ export default function AdminDashboard() {
         return;
       }
 
-      const authData = await authResponse.json();
-      setAdminUser(authData.user);
+      const authData = await authResponse.json().catch(() => ({}));
+      // normalize shape: support { user }, { data: { user } } or direct user object
+      const rawUser = authData?.user ?? authData?.data?.user ?? authData?.admin ?? authData;
+      const fullName =
+        (rawUser?.fullName ??
+        rawUser?.name ??
+        `${rawUser?.firstName ?? ""} ${rawUser?.lastName ?? ""}`.trim()) ||
+        "";
+      const email = rawUser?.email ?? rawUser?.emailAddress ?? "";
+      setAdminUser({ fullName, email });
+      // optional: console.log(authData, rawUser);
 
       await fetchRequests();
     } catch (err) {
@@ -127,7 +136,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // Approve a deposit (use depositId from PaymentProof._id)
+  // Approve a deposit (use depositId from Deposit._id)
   const handleApprove = async (depositId: string) => {
     try {
       const response = await fetch(
@@ -145,18 +154,22 @@ export default function AdminDashboard() {
         throw new Error(`Approve failed: ${response.status}`);
       }
 
-      // mark the specific deposit as approved in UI
-      setRequests((prev) =>
-        prev.map((r) => (r.id === depositId ? { ...r, status: "approved" } : r))
-      );
+      // parse response to get updated data
+      const data = JSON.parse(bodyText);
+      console.log("Approve response:", data);
 
-      // show approved items and refresh to ensure totals are accurate
-      setFilterStatus("approved");
-      setSelectedRequest(null);
-      setIsModalOpen(false);
+       // mark the specific deposit as approved in UI
+       setRequests((prev) =>
+         prev.map((r) => (r.id === depositId ? { ...r, status: "approved" } : r))
+       );
 
-      // refresh from server to get authoritative data (optional but recommended)
-      await fetchRequests();
+       // show approved items and refresh to ensure totals are accurate
+       setFilterStatus("approved");
+       setSelectedRequest(null);
+       setIsModalOpen(false);
+
+       // refresh from server to get authoritative data (optional but recommended)
+       await fetchRequests();
     } catch (err) {
       console.error("Approve error:", err);
     }
@@ -166,7 +179,7 @@ export default function AdminDashboard() {
   const handleReject = async (depositId: string, reason: string) => {
     try {
       const response = await fetch(
-        `https://top-mart-api.onrender.com/api/approval/${depositId}/reject`,
+        `https://top-mart-api.onrender.com/api/deposit/${depositId}/reject`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -181,12 +194,16 @@ export default function AdminDashboard() {
         throw new Error(`Reject failed: ${response.status}`);
       }
 
-      setRequests((prev) =>
-        prev.map((r) => (r.id === depositId ? { ...r, status: "rejected" } : r))
-      );
+      // parse response
+      const data = JSON.parse(bodyText);
+      console.log("Reject response:", data);
 
-      setIsModalOpen(false);
-      await fetchRequests();
+       setRequests((prev) =>
+         prev.map((r) => (r.id === depositId ? { ...r, status: "rejected" } : r))
+       );
+
+       setIsModalOpen(false);
+       await fetchRequests();
     } catch (err) {
       console.error("Reject error:", err);
     }
@@ -245,7 +262,7 @@ export default function AdminDashboard() {
                 Admin Dashboard
               </h1>
               <p className="text-slate-400">
-                Manage and approve user investment plan applications
+                Manage and approve user deposits applications
               </p>
             </div>
             {adminUser && (

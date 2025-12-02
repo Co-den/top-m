@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X, Download, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { apiRequest } from "@/lib/api";
 
 interface DepositRequest {
   id: string;
@@ -34,41 +33,6 @@ export default function ApprovalModal({
 }: ApprovalModalProps) {
   const [rejectionReason, setRejectionReason] = useState("");
   const [showRejectionForm, setShowRejectionForm] = useState(false);
-
-  const [fetchedUser, setFetchedUser] = useState<any | null>(null);
-  const [userLoading, setUserLoading] = useState(false);
-  const [userError, setUserError] = useState<string | null>(null);
-
-  // fetch user details when modal opens
-  useEffect(() => {
-    let mounted = true;
-    const loadUser = async () => {
-      if (!isOpen || !request?.userId) return;
-      setUserLoading(true);
-      setUserError(null);
-      try {
-        const data = await apiRequest(
-          `https://top-mart-api.onrender.com/api/users/${request.userId}`,
-          { credentials: "include" }
-        );
-        if (!mounted) return;
-        // backend may return user in different shapes
-        const user = data?.data?.user ?? data?.user ?? data;
-        setFetchedUser(user ?? null);
-      } catch (err: any) {
-        if (!mounted) return;
-        setUserError(err?.message ?? "Failed to load user");
-        setFetchedUser(null);
-      } finally {
-        if (mounted) setUserLoading(false);
-      }
-    };
-
-    loadUser();
-    return () => {
-      mounted = false;
-    };
-  }, [isOpen, request?.userId]);
 
   if (!isOpen) return null;
 
@@ -105,50 +69,20 @@ export default function ApprovalModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-slate-400 text-sm">Full Name</p>
-                <p className="text-white font-medium">
-                  {fetchedUser?.fullName ?? request.userName}
-                </p>
+                <p className="text-white font-medium">{request.userName}</p>
               </div>
               <div>
                 <p className="text-slate-400 text-sm">Email</p>
-                <p className="text-white font-medium">
-                  {fetchedUser?.email ?? request.email}
-                </p>
-              </div>
-              <div>
-                <p className="text-slate-400 text-sm">Phone</p>
-                <p className="text-white font-medium">
-                  {fetchedUser?.phoneNumber ?? "-"}
-                </p>
+                <p className="text-white font-medium">{request.email}</p>
               </div>
               <div>
                 <p className="text-slate-400 text-sm">User ID</p>
-                <p className="text-white font-medium">
-                  {fetchedUser?.id ?? request.userId}
-                </p>
+                <p className="text-white font-medium">{request.userId}</p>
               </div>
               <div>
                 <p className="text-slate-400 text-sm">Submission Date</p>
-                <p className="text-white font-medium">
-                  {request.submittedDate}
-                </p>
+                <p className="text-white font-medium">{request.submittedDate}</p>
               </div>
-              <div>
-                <p className="text-slate-400 text-sm">Account Balance</p>
-                <p className="text-emerald-400 font-semibold">
-                  ₦{Number(fetchedUser?.balance ?? 0).toLocaleString()}
-                </p>
-              </div>
-              {userLoading && (
-                <div className="col-span-2 text-sm text-slate-400">
-                  Loading user details...
-                </div>
-              )}
-              {userError && (
-                <div className="col-span-2 text-sm text-red-400">
-                  {userError}
-                </div>
-              )}
             </div>
           </div>
 
@@ -306,7 +240,6 @@ export default function ApprovalModal({
                   </Button>
                   <Button
                     onClick={onApprove}
-                    
                     className="bg-emerald-500 hover:bg-emerald-600 text-white"
                   >
                     Approve Plan
