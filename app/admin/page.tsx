@@ -109,19 +109,19 @@ export default function AdminDashboard() {
     }
   };
 
-  const pendingRequests = requests.filter((d) => d.status === "pending");
-  const approvedCount = requests.filter((d) => d.status === "approved").length;
-  const rejectedCount = requests.filter((d) => d.status === "rejected").length;
+  const pendingRequests = requests.filter((r) => r.status === "pending");
+  const approvedCount = requests.filter((r) => r.status === "approved").length;
+  const rejectedCount = requests.filter((r) => r.status === "rejected").length;
 
   const filteredRequests =
     filterStatus === "all"
       ? requests
-      : requests.filter((d) => d.status === filterStatus);
+      : requests.filter((r) => r.status === filterStatus);
 
-  const handleApprove = async (depositId: string) => {
+  const handleApprove = async (requestId: string) => {
     try {
       await fetch(
-        `https://top-mart-api.onrender.com/api/approval/${depositId}/approve`,
+        `https://top-mart-api.onrender.com/api/approval/${requestId}/approve`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -129,7 +129,7 @@ export default function AdminDashboard() {
         }
       );
       setRequests((prev) =>
-        prev.map((d) => (d.id === depositId ? { ...d, status: "approved" } : d))
+        prev.map((r) => (r.id === requestId ? { ...r, status: "approved" } : r ))
       );
       setIsModalOpen(false);
       // Optionally refetch to ensure data is in sync
@@ -139,10 +139,10 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleReject = async (depositId: string, reason: string) => {
+  const handleReject = async (requestId: string, reason: string) => {
     try {
       await fetch(
-        `https://top-mart-api.onrender.com/api/approval/${depositId}/reject`,
+        `https://top-mart-api.onrender.com/api/approval/${requestId}/reject`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -151,7 +151,7 @@ export default function AdminDashboard() {
         }
       );
       setRequests((prev) =>
-        prev.map((d) => (d.id === depositId ? { ...d, status: "rejected" } : d))
+        prev.map((r) => (r.id === requestId ? { ...r, status: "rejected" } : r))
       );
       setIsModalOpen(false);
       // Optionally refetch to ensure data is in sync
@@ -320,39 +320,39 @@ export default function AdminDashboard() {
                       </td>
                     </tr>
                   ) : (
-                    filteredRequests.map((deposit) => (
+                    filteredRequests.map((r) => (
                       <tr
-                        key={deposit.id}
+                        key={r.id}
                         className="hover:bg-slate-800/50 transition"
                       >
                         <td className="px-6 py-4">
                           <div>
                             <p className="text-white font-medium">
-                              {deposit.userName}
+                              {r.userName}
                             </p>
                             <p className="text-slate-400 text-sm">
-                              {deposit.email}
+                              {r.email}
                             </p>
                           </div>
                         </td>
 
                         <td className="px-6 py-4 text-white font-semibold">
-                          ₦{deposit.amount.toLocaleString()}
+                          ₦{r.amount.toLocaleString()}
                         </td>
 
                         <td className="px-6 py-4 text-slate-400 text-sm">
-                          {deposit.submittedDate}
+                          {r.submittedDate}
                         </td>
                         <td className="px-6 py-4">
-                          <StatusBadge status={deposit.status} />
+                          <StatusBadge status={r.status} />
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            {deposit.status === "pending" && (
+                            {r.status === "pending" && (
                               <Button
                                 size="sm"
                                 onClick={() => {
-                                  setSelectedRequest(deposit);
+                                  setSelectedRequest(r);
                                   setIsModalOpen(true);
                                 }}
                                 className="bg-pink-500 hover:bg-pink-600 text-white h-8 px-3"
@@ -360,12 +360,12 @@ export default function AdminDashboard() {
                                 Review
                               </Button>
                             )}
-                            {deposit.status !== "pending" && (
+                            {r.status !== "pending" && (
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => {
-                                  setSelectedRequest(deposit);
+                                  setSelectedRequest(r);
                                   setIsModalOpen(true);
                                 }}
                                 className="text-slate-400 h-8"
