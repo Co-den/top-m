@@ -123,7 +123,7 @@ export default function AdminDashboard() {
       await fetch(
         `https://top-mart-api.onrender.com/api/approval/${depositId}/approve`,
         {
-          method: "POST",
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
         }
@@ -144,7 +144,7 @@ export default function AdminDashboard() {
       await fetch(
         `https://top-mart-api.onrender.com/api/approval/${depositId}/reject`,
         {
-          method: "POST",
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({ reason }),
