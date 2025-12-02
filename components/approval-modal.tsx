@@ -15,7 +15,6 @@ interface DepositRequest {
   paymentProof: string;
   status: "pending" | "approved" | "rejected";
   submittedDate: string;
-
 }
 
 interface ApprovalModalProps {
@@ -73,6 +72,7 @@ export default function ApprovalModal({
 
   if (!isOpen) return null;
 
+  // Handle rejection submission
   const handleRejectSubmit = () => {
     if (rejectionReason.trim()) {
       onReject(rejectionReason);
@@ -86,9 +86,7 @@ export default function ApprovalModal({
       <div className="bg-slate-900 rounded-xl border border-slate-800 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white">
-            Deposit Review
-          </h2>
+          <h2 className="text-xl font-bold text-white">Deposit Review</h2>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-white transition"
@@ -166,7 +164,6 @@ export default function ApprovalModal({
                   ₦{request.amount.toLocaleString()}
                 </p>
               </div>
-              
             </div>
           </div>
 
@@ -309,6 +306,7 @@ export default function ApprovalModal({
                   </Button>
                   <Button
                     onClick={onApprove}
+                    
                     className="bg-emerald-500 hover:bg-emerald-600 text-white"
                   >
                     Approve Plan

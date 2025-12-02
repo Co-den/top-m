@@ -15,13 +15,13 @@ interface DepositRequest {
   paymentProof: string;
   status: "pending" | "approved" | "rejected";
   submittedDate: string;
-  
 }
 
 export default function AdminDashboard() {
   const [requests, setRequests] = useState<DepositRequest[]>([]);
-  const [selectedRequest, setSelectedRequest] =
-    useState<DepositRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<DepositRequest | null>(
+    null
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<
     "all" | "pending" | "approved" | "rejected"
@@ -33,11 +33,22 @@ export default function AdminDashboard() {
     email: string;
   } | null>(null);
 
-  // Fetch pending users from backend
+  // Derived counts
+  const approvedCount = requests.filter((r) => r.status === "approved").length;
+  const rejectedCount = requests.filter((r) => r.status === "rejected").length;
+
+  // Filtered list for the table
+  const filteredRequests =
+    filterStatus === "all"
+      ? requests
+      : requests.filter((r) => r.status === filterStatus);
+
+  // Fetch ALL deposit requests from backend
   const fetchRequests = async () => {
     try {
       setLoading(true);
       setError(null);
+
       const response = await fetch(
         "https://top-mart-api.onrender.com/api/approval/pending-users",
         {
@@ -48,28 +59,50 @@ export default function AdminDashboard() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch pending requests");
+        throw new Error("Failed to fetch deposit requests");
       }
 
-      const data = await response.json();
-      setRequests(data);
+      const json = await response.json().catch(() => null);
+      const raw = Array.isArray(json) ? json : json?.data ?? json?.proofs ?? [];
+
+      // normalize PaymentProof -> DepositRequest
+      const mapped = (Array.isArray(raw) ? raw : []).map((p: any) => {
+        const user = p.userId ?? p.user ?? {};
+        const created = p.createdAt ?? p.submittedAt ?? p.date ?? p.created;
+        return {
+          id: String(p._id ?? p.id ?? ""),
+          userId: String(user._id ?? user.id ?? p.userId ?? ""),
+          userName:
+            user?.fullName ??
+            user?.name ??
+            (`${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() ||
+              "Unknown"),
+          email: user?.email ?? p.email ?? "",
+          plan: p.plan ?? p.investmentPlan ?? "Unknown",
+          amount: Number(p.amount ?? p.investmentAmount ?? p.proofAmount ?? 0),
+          paymentProof: p.paymentProof ?? p.proofUrl ?? p.receiptUrl ?? "",
+          status: (p.status ?? "pending") as
+            | "pending"
+            | "approved"
+            | "rejected",
+          submittedDate: created
+            ? new Date(created).toLocaleString()
+            : p.submittedDate ?? "",
+        } as DepositRequest;
+      });
+
+      setRequests(mapped);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-      console.error("Failed to fetch requests:", err);
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      console.error("Fetch error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch requests on component mount
-  useEffect(() => {
-    verifyAuthAndFetch();
-  }, []);
-
-  // Verify authentication and fetch data
+  // Verify admin and fetch data
   const verifyAuthAndFetch = async () => {
     try {
-      // First verify authentication
       const authResponse = await fetch(
         "https://top-mart-api.onrender.com/api/admin/verify",
         {
@@ -80,7 +113,6 @@ export default function AdminDashboard() {
       );
 
       if (!authResponse.ok) {
-        // Not authenticated, redirect to login
         window.location.href = "/admin-auth";
         return;
       }
@@ -88,7 +120,6 @@ export default function AdminDashboard() {
       const authData = await authResponse.json();
       setAdminUser(authData.user);
 
-      // Then fetch requests
       await fetchRequests();
     } catch (err) {
       console.error("Auth verification failed:", err);
@@ -96,53 +127,46 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleLogout = async () => {
+  // Approve a deposit (use depositId from PaymentProof._id)
+  const handleApprove = async (depositId: string) => {
     try {
-      await fetch("https://top-mart-api.onrender.com/api/admin/logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-      window.location.href = "/admin-auth";
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
-  };
-
-  const pendingRequests = requests.filter((r) => r.status === "pending");
-  const approvedCount = requests.filter((r) => r.status === "approved").length;
-  const rejectedCount = requests.filter((r) => r.status === "rejected").length;
-
-  const filteredRequests =
-    filterStatus === "all"
-      ? requests
-      : requests.filter((r) => r.status === filterStatus);
-
-  const handleApprove = async (requestId: string) => {
-    try {
-      await fetch(
-        `https://top-mart-api.onrender.com/api/approval/${requestId}/approve`,
+      const response = await fetch(
+        `https://top-mart-api.onrender.com/api/approval/${depositId}/approve`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
         }
       );
+
+      const bodyText = await response.text().catch(() => "");
+      if (!response.ok) {
+        console.error("Approve failed:", response.status, bodyText);
+        throw new Error(`Approve failed: ${response.status}`);
+      }
+
+      // mark the specific deposit as approved in UI
       setRequests((prev) =>
-        prev.map((r) => (r.id === requestId ? { ...r, status: "approved" } : r ))
+        prev.map((r) => (r.id === depositId ? { ...r, status: "approved" } : r))
       );
+
+      // show approved items and refresh to ensure totals are accurate
+      setFilterStatus("approved");
+      setSelectedRequest(null);
       setIsModalOpen(false);
-      // Optionally refetch to ensure data is in sync
-      // await fetchRequests();
+
+      // refresh from server to get authoritative data (optional but recommended)
+      await fetchRequests();
     } catch (err) {
-      console.error("Failed to approve:", err);
+      console.error("Approve error:", err);
     }
   };
 
-  const handleReject = async (requestId: string, reason: string) => {
+  // Reject a deposit (use depositId and send reason)
+  const handleReject = async (depositId: string, reason: string) => {
     try {
-      await fetch(
-        `https://top-mart-api.onrender.com/api/approval/${requestId}/reject`,
+      const response = await fetch(
+        `https://top-mart-api.onrender.com/api/approval/${depositId}/reject`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -150,17 +174,45 @@ export default function AdminDashboard() {
           body: JSON.stringify({ reason }),
         }
       );
+
+      const bodyText = await response.text().catch(() => "");
+      if (!response.ok) {
+        console.error("Reject failed:", response.status, bodyText);
+        throw new Error(`Reject failed: ${response.status}`);
+      }
+
       setRequests((prev) =>
-        prev.map((r) => (r.id === requestId ? { ...r, status: "rejected" } : r))
+        prev.map((r) => (r.id === depositId ? { ...r, status: "rejected" } : r))
       );
+
       setIsModalOpen(false);
-      // Optionally refetch to ensure data is in sync
       await fetchRequests();
     } catch (err) {
-      console.error("Failed to reject:", err);
+      console.error("Reject error:", err);
     }
   };
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      const response = await fetch(
+        "https://top-mart-api.onrender.com/api/admin/logout",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
 
+      if (!response.ok) throw new Error("Logout failed");
+
+      window.location.href = "/admin-auth";
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+  };
+  useEffect(() => {
+    verifyAuthAndFetch();
+  }, []);
   return (
     <div className="p-8">
       {/* Loading State */}
@@ -229,7 +281,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <StatCard
               title="Pending Approvals"
-              value={pendingRequests.length}
+              value={requests.filter((r) => r.status === "pending").length}
               color="bg-amber-500/10 text-amber-400"
               icon="⏳"
             />
@@ -320,9 +372,9 @@ export default function AdminDashboard() {
                       </td>
                     </tr>
                   ) : (
-                    filteredRequests.map((r) => (
+                    filteredRequests.map((r, idx) => (
                       <tr
-                        key={r.id}
+                        key={r.id || r.userId || idx}
                         className="hover:bg-slate-800/50 transition"
                       >
                         <td className="px-6 py-4">
@@ -330,9 +382,7 @@ export default function AdminDashboard() {
                             <p className="text-white font-medium">
                               {r.userName}
                             </p>
-                            <p className="text-slate-400 text-sm">
-                              {r.email}
-                            </p>
+                            <p className="text-slate-400 text-sm">{r.email}</p>
                           </div>
                         </td>
 
