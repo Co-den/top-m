@@ -54,7 +54,11 @@ export default function ChangePasswordPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            passwordCurrent: formData.currentPassword,
+            password: formData.newPassword,
+            passwordConfirm: formData.confirmPassword,
+          }),
         }
       );
 
