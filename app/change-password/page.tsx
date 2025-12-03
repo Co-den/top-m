@@ -51,7 +51,7 @@ export default function ChangePasswordPage() {
       const res = await fetch(
         "https://top-mart-api.onrender.com/api/auth/change-password",
         {
-          method: "POST",
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
