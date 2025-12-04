@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Phone, Lock, User, Mail } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
+
+const MotionInput = motion(Input);
+const MotionButton = motion(Button);
 
 export default function SignupPage() {
   const router = useRouter();
@@ -51,35 +55,73 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.36, ease: "easeOut" }}
+      className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4"
+    >
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-lg shadow-lg p-8 md:p-10">
+        <motion.div
+          initial={{ scale: 0.995, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 280, damping: 24 }}
+          className="bg-white rounded-lg shadow-lg p-8 md:p-10"
+        >
           <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
+            <motion.h1
+              initial={{ y: 6, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.32 }}
+              className="text-3xl md:text-4xl font-bold text-slate-900 mb-2"
+            >
               Create Account
-            </h1>
-            <p className="text-slate-600 text-sm md:text-base">
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.08 }}
+              className="text-slate-600 text-sm md:text-base"
+            >
               Join Top Mart today
-            </p>
+            </motion.p>
           </div>
 
-          {error && (
-            <p className="text-red-500 text-sm mb-3 text-center">{error}</p>
-          )}
+          <AnimatePresence initial={false}>
+            {error && (
+              <motion.p
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.22 }}
+                className="text-red-500 text-sm mb-3 text-center"
+              >
+                {String(error)}
+              </motion.p>
+            )}
+          </AnimatePresence>
 
-          <form onSubmit={handleSignUp} className="space-y-5">
+          <motion.form
+            onSubmit={handleSignUp}
+            className="space-y-5"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28 }}
+          >
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-2">
                 Full Name
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
+                <MotionInput
                   type="text"
                   placeholder="Enter your full name"
                   value={fullName}
                   onChange={(e) => setName(e.target.value)}
                   className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                  whileFocus={{ scale: 1.01 }}
                 />
               </div>
             </div>
@@ -90,12 +132,13 @@ export default function SignupPage() {
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
+                <MotionInput
                   type="email"
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                  whileFocus={{ scale: 1.01 }}
                 />
               </div>
             </div>
@@ -106,12 +149,13 @@ export default function SignupPage() {
               </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
+                <MotionInput
                   type="tel"
                   placeholder="Enter your phone number"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                  whileFocus={{ scale: 1.01 }}
                 />
               </div>
             </div>
@@ -122,55 +166,60 @@ export default function SignupPage() {
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
+                <MotionInput
                   type="password"
                   placeholder="Create a password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                  whileFocus={{ scale: 1.01 }}
                 />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-2">
-                confirmPassword
+                Confirm Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
+                <MotionInput
                   type="password"
                   placeholder="Confirm password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2">
-                referralCode
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
-                  type="referralcode"
-                  placeholder="optional"
-                  value={referralCode}
-                  onChange={(e) => setReferralCode(e.target.value)}
-                  className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                  whileFocus={{ scale: 1.01 }}
                 />
               </div>
             </div>
 
-            <Button
+            <div>
+              <label className="block text-sm font-medium text-slate-900 mb-2">
+                Referral Code (optional)
+              </label>
+              <div className="relative">
+                <MotionInput
+                  type="text"
+                  placeholder="optional"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value)}
+                  className="pl-4 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                  whileFocus={{ scale: 1.01 }}
+                />
+              </div>
+            </div>
+
+            <MotionButton
               type="submit"
               disabled={isLoading}
+              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.02 }}
               className="w-full h-11 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg transition-colors"
             >
               {isLoading ? "Creating account..." : "Create Account"}
-            </Button>
-          </form>
+            </MotionButton>
+          </motion.form>
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
@@ -183,15 +232,16 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <Button
+          <MotionButton
             onClick={() => router.push("/login")}
             variant="outline"
+            whileTap={{ scale: 0.98 }}
             className="w-full h-11 border-slate-300 text-slate-900 font-semibold hover:bg-slate-50 bg-transparent"
           >
             Sign in
-          </Button>
-        </div>
+          </MotionButton>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }

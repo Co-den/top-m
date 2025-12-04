@@ -8,6 +8,7 @@ import Link from "next/link";
 import { BottomNav } from "@/components/bottom-nav";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function PaymentConfirmationPage() {
   const { depositId } = useParams<{ depositId: string }>();
@@ -18,9 +19,9 @@ export default function PaymentConfirmationPage() {
   const [senderName, setSenderName] = useState("");
   const [minutes, setMinutes] = useState(10);
   const [seconds, setSeconds] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const amount = deposit?.amount || 0;
-
   const user = deposit?.user;
 
   useEffect(() => {
@@ -65,6 +66,7 @@ export default function PaymentConfirmationPage() {
       return;
     }
 
+    setLoading(true);
     try {
       const token = localStorage.getItem("token");
       const formData = new FormData();
@@ -82,6 +84,8 @@ export default function PaymentConfirmationPage() {
       toast.success("Proof submitted successfully!");
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to submit proof");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,54 +98,107 @@ export default function PaymentConfirmationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.36, ease: "easeOut" }}
+      className="min-h-screen bg-gray-50 flex flex-col"
+    >
       {/* Pink Header */}
-      <div className="bg-pink-500 text-white p-6 flex items-center justify-center relative">
+      <motion.div
+        initial={{ y: -6, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="bg-pink-500 text-white p-6 flex items-center justify-center relative"
+      >
         <Link
           href="/recharge"
           className="absolute left-4 text-white hover:text-pink-100 transition"
         >
-          <ArrowLeft className="w-6 h-6" />
+          <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.05 }}>
+            <ArrowLeft className="w-6 h-6" />
+          </motion.div>
         </Link>
         <h1 className="text-xl font-bold">Payment Confirmation</h1>
-      </div>
+      </motion.div>
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto pb-32">
         <div className="max-w-2xl mx-auto w-full px-4 py-6 space-y-6">
           {/* Amount Card */}
-          <div className="bg-pink-500 text-white rounded-lg p-8 text-center shadow-sm">
-            <div className="text-5xl font-bold mb-2">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.995 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.32 }}
+            className="bg-pink-500 text-white rounded-lg p-8 text-center shadow-sm"
+          >
+            <motion.div
+              initial={{ y: 6, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.06 }}
+              className="text-5xl font-bold mb-2"
+            >
               ₦{deposit ? deposit.amount.toLocaleString() : "0"}
-            </div>
-            <p className="text-pink-100 mb-1">
+            </motion.div>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="text-pink-100 mb-1"
+            >
               Use this account for this transaction only!
-            </p>
-            <p className="text-pink-100">
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.12 }}
+              className="text-pink-100"
+            >
               Account expires in {minutes}:{seconds.toString().padStart(2, "0")}
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
 
           {/* Payment Details Card */}
-          <div className="bg-white rounded-lg shadow-sm p-6 space-y-6 border border-gray-200">
+          <motion.div
+            layout
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08, duration: 0.32 }}
+            className="bg-white rounded-lg shadow-sm p-6 space-y-6 border border-gray-200"
+          >
             {/* Name Field */}
-            <div>
+            <motion.div
+              layout
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
               <label className="block text-sm text-gray-700 mb-1">Name:</label>
               <div className="text-gray-900">
                 {user?.bankAccount?.accountName ?? "Not set"}
               </div>
-            </div>
+            </motion.div>
 
             {/* Bank Field */}
-            <div>
+            <motion.div
+              layout
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.02 }}
+            >
               <label className="block text-sm text-gray-700 mb-1">Bank:</label>
               <div className="text-gray-900">
                 {user?.bankAccount?.bankName ?? "Not set"}
               </div>
-            </div>
+            </motion.div>
 
             {/* Account Number Field */}
-            <div>
+            <motion.div
+              layout
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.04 }}
+            >
               <label className="block text-sm text-gray-700 mb-1">
                 Account Number:
               </label>
@@ -149,62 +206,96 @@ export default function PaymentConfirmationPage() {
                 <span className="text-gray-900">
                   {user?.bankAccount?.accountNumber ?? "Not set"}
                 </span>
-                <button
+                <motion.button
                   onClick={() =>
                     handleCopy(
                       user?.bankAccount?.accountNumber ?? "",
                       "account"
                     )
                   }
+                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.05 }}
                   className="text-pink-500 hover:text-pink-600 transition"
                 >
                   <Copy className="w-5 h-5" />
-                </button>
+                </motion.button>
               </div>
-            </div>
+            </motion.div>
 
             {/* Amount Field */}
-            <div>
+            <motion.div
+              layout
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.06 }}
+            >
               <label className="block text-sm text-gray-700 mb-1">
                 Amount:
               </label>
               <div className="flex items-center justify-between">
                 <span className="text-gray-900 font-semibold">{amount}</span>
-                <button
+                <motion.button
                   onClick={() => handleCopy(amount, "amount")}
+                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.05 }}
                   className="text-pink-500 hover:text-pink-600 transition"
                 >
                   <Copy className="w-5 h-5" />
-                </button>
+                </motion.button>
               </div>
-            </div>
+            </motion.div>
 
             {/* Expiry Alert */}
-            <div className="bg-pink-50 border border-pink-200 rounded p-4 text-center">
+            <motion.div
+              layout
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 }}
+              className="bg-pink-50 border border-pink-200 rounded p-4 text-center"
+            >
               <p className="text-pink-600 text-sm font-medium">
                 Please note that payment expires in {minutes}:
                 {seconds.toString().padStart(2, "0")}
               </p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           {/* Deposit Confirmation Section */}
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <motion.div
+            layout
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.32 }}
+            className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
+          >
             {/* Section Header */}
             <div className="flex items-center gap-3 mb-6">
-              <CheckCircle className="w-6 h-6 text-pink-500" />
+              <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.05 }}>
+                <CheckCircle className="w-6 h-6 text-pink-500" />
+              </motion.div>
               <h2 className="text-lg font-semibold text-gray-900">
                 Deposit Confirmation
               </h2>
             </div>
 
             {/* Instructions */}
-            <p className="text-pink-600 text-sm font-medium mb-6">
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.12 }}
+              className="text-pink-600 text-sm font-medium mb-6"
+            >
               Kindly submit payment proof and payer name below!
-            </p>
+            </motion.p>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <motion.form
+              onSubmit={handleSubmit}
+              className="space-y-4"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.14 }}
+            >
               {/* File Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -217,50 +308,64 @@ export default function PaymentConfirmationPage() {
                     onChange={handleFileChange}
                     className="hidden"
                   />
-                  <label
+                  <motion.label
                     htmlFor="file-upload"
+                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.01 }}
                     className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded cursor-pointer hover:bg-gray-50 transition"
                   >
                     <span className="text-gray-700 font-medium">
                       Choose File
                     </span>
-                  </label>
-                  {fileName && (
-                    <span className="ml-3 text-gray-600 text-sm">
-                      {fileName}
-                    </span>
-                  )}
-                  {!fileName && (
-                    <span className="ml-3 text-gray-400 text-sm">
-                      No file chosen
-                    </span>
-                  )}
+                  </motion.label>
+                  <AnimatePresence>
+                    {fileName ? (
+                      <motion.span
+                        initial={{ opacity: 0, x: -4 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -4 }}
+                        className="ml-3 text-gray-600 text-sm"
+                      >
+                        {fileName}
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="ml-3 text-gray-400 text-sm"
+                      >
+                        No file chosen
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 
               {/* Sender Name */}
-              <div>
-                <input
-                  type="text"
-                  placeholder="Enter sender name"
-                  value={senderName}
-                  onChange={(e) => setSenderName(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                />
-              </div>
+              <motion.input
+                type="text"
+                placeholder="Enter sender name"
+                value={senderName}
+                onChange={(e) => setSenderName(e.target.value)}
+                whileFocus={{ scale: 1.01 }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              />
 
               {/* Submit Button */}
-              <button
+              <motion.button
                 type="submit"
-                className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 rounded-lg transition duration-200 mt-6"
+                disabled={loading}
+                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.02 }}
+                className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 rounded-lg transition duration-200 mt-6 disabled:opacity-60"
               >
-                Submit
-              </button>
-            </form>
-          </div>
+                {loading ? "Submitting..." : "Submit"}
+              </motion.button>
+            </motion.form>
+          </motion.div>
         </div>
       </div>
       <BottomNav />
-    </div>
+    </motion.div>
   );
 }

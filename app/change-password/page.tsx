@@ -5,6 +5,7 @@ import { Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import { usePasswordValidation } from "@/hooks/userPasswordValidation";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function ChangePasswordPage() {
   const router = useRouter();
@@ -82,37 +83,68 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4"
+    >
+      <motion.div
+        layout
+        initial={{ scale: 0.995 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 24 }}
+        className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8"
+      >
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
             Change Password
           </h1>
           <p className="text-muted-foreground">Update your account password</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Success Message */}
-          {success && (
-            <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-              Password changed successfully!
-            </div>
-          )}
 
-          {/* Error Message */}
-          {errors.submit && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
-              {errors.submit}
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <AnimatePresence initial={false}>
+            {success && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.25 }}
+                className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm"
+              >
+                Password changed successfully!
+              </motion.div>
+            )}
+
+            {errors.submit && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.25 }}
+                className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm"
+              >
+                {errors.submit}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Current Password */}
-          <div>
+          <motion.div
+            layout
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             <label className="block text-sm font-medium text-foreground mb-2">
               Current Password
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <input
+              <motion.input
+                whileFocus={{ scale: 1.01 }}
                 type={showPasswords.current ? "text" : "password"}
                 name="currentPassword"
                 value={formData.currentPassword}
@@ -142,16 +174,17 @@ export default function ChangePasswordPage() {
                 {errors.currentPassword}
               </p>
             )}
-          </div>
+          </motion.div>
 
           {/* New Password */}
-          <div>
+          <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
             <label className="block text-sm font-medium text-foreground mb-2">
               New Password
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <input
+              <motion.input
+                whileFocus={{ scale: 1.01 }}
                 type={showPasswords.new ? "text" : "password"}
                 name="newPassword"
                 value={formData.newPassword}
@@ -176,16 +209,17 @@ export default function ChangePasswordPage() {
             {errors.newPassword && (
               <p className="text-red-500 text-xs mt-1">{errors.newPassword}</p>
             )}
-          </div>
+          </motion.div>
 
           {/* Confirm Password */}
-          <div>
+          <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.34 }}>
             <label className="block text-sm font-medium text-foreground mb-2">
               Confirm Password
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <input
+              <motion.input
+                whileFocus={{ scale: 1.01 }}
                 type={showPasswords.confirm ? "text" : "password"}
                 name="confirmPassword"
                 value={formData.confirmPassword}
@@ -215,30 +249,35 @@ export default function ChangePasswordPage() {
                 {errors.confirmPassword}
               </p>
             )}
-          </div>
+          </motion.div>
 
           {/* Submit Button */}
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-6 rounded-lg transition duration-200 mt-6"
-          >
-            {loading ? "Updating..." : "Change Password"}
-          </Button>
+          <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.36 }}>
+            <motion.button
+              type="submit"
+              disabled={loading}
+              whileTap={{ scale: 0.98 }}
+              className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-6 rounded-lg transition duration-200 mt-6 disabled:opacity-60"
+            >
+              {loading ? "Updating..." : "Change Password"}
+            </motion.button>
+          </motion.div>
 
           {/* Password Requirements */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-xs font-semibold text-foreground mb-2">
-              Password Requirements:
-            </p>
-            <ul className="text-xs text-muted-foreground space-y-1">
-              <li>✓ At least 8 characters long</li>
-              <li>✓ Different from current password</li>
-              <li>✓ Passwords must match</li>
-            </ul>
-          </div>
+          <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.08 }}>
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <p className="text-xs font-semibold text-foreground mb-2">
+                Password Requirements:
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li>✓ At least 8 characters long</li>
+                <li>✓ Different from current password</li>
+                <li>✓ Passwords must match</li>
+              </ul>
+            </div>
+          </motion.div>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

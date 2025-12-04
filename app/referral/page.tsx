@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, ArrowLeft } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function SharePage() {
   const router = useRouter();
@@ -26,75 +27,151 @@ export default function SharePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f7f7f7]">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.36, ease: "easeOut" }}
+      className="min-h-screen flex flex-col bg-[#f7f7f7]"
+    >
       {/* HEADER */}
-      <div className="w-full flex justify-center py-6">
+      <motion.div
+        initial={{ y: -6, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.28 }}
+        className="w-full flex justify-center py-6"
+      >
         <div className="bg-[#e81d78] text-white flex items-center justify-between px-6 py-5 rounded-xl max-w-3xl w-full shadow-lg">
-          <button
+          <motion.button
             onClick={() => router.back()}
+            whileTap={{ scale: 0.95 }}
             className="text-white flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/20 transition-colors"
           >
             <ArrowLeft size={24} />
-          </button>
+          </motion.button>
 
-          <span className="text-[20px] font-semibold flex-1 text-center">
+          <motion.span
+            initial={{ scale: 0.995 }}
+            animate={{ scale: 1 }}
+            className="text-[20px] font-semibold flex-1 text-center"
+          >
             Share
-          </span>
+          </motion.span>
 
           <div className="w-10" />
         </div>
-      </div>
+      </motion.div>
 
       {/* CONTENT */}
-      <div className="flex-1 flex justify-center px-4 pt-8">
-        <div className="w-full max-w-3xl bg-white rounded-3xl shadow-lg p-6">
+      <motion.main
+        layout
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.32 }}
+        className="flex-1 flex justify-center px-4 pt-8"
+      >
+        <motion.div
+          layout
+          initial={{ scale: 0.995, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 260, damping: 24 }}
+          className="w-full max-w-3xl bg-white rounded-3xl shadow-lg p-6"
+        >
           {/* TITLE */}
-          <h2 className="flex items-center gap-3 text-[18px] font-semibold text-gray-800 mb-6">
+          <motion.h2
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.02 }}
+            className="flex items-center gap-3 text-[18px] font-semibold text-gray-800 mb-6"
+          >
             <span className="text-pink-600 text-2xl">👥</span>
             Invite Friends
-          </h2>
+          </motion.h2>
 
           {/* INVITE CODE */}
-          <p className="text-base font-medium text-gray-700 mb-3">
+          <motion.p className="text-base font-medium text-gray-700 mb-3">
             Your Invite Code
-          </p>
-          <div className="bg-[#d11667] rounded-2xl flex items-center justify-between px-6 py-4 text-white">
-            <span className="text-xl font-bold tracking-wider break-all">
-              {inviteCode}
-            </span>
-            <button
-              onClick={() => copy(inviteCode, "code")}
-              className="bg-white text-[#d11667] text-base h-10 px-5 rounded-lg font-medium flex items-center gap-2 shadow-sm hover:bg-gray-100 transition-colors"
+          </motion.p>
+
+          <motion.div
+            layout
+            className="bg-[#d11667] rounded-2xl flex items-center justify-between px-6 py-4 text-white"
+          >
+            <motion.span
+              layout
+              className="text-xl font-bold tracking-wider break-all"
             >
-              <Copy size={18} />
-              {copiedCode ? "Copied!" : "Copy"}
-            </button>
-          </div>
+              {inviteCode}
+            </motion.span>
+
+            <div className="flex items-center gap-3">
+              <motion.button
+                onClick={() => copy(inviteCode, "code")}
+                whileTap={{ scale: 0.96 }}
+                whileHover={{ scale: 1.02 }}
+                className="bg-white text-[#d11667] text-base h-10 px-5 rounded-lg font-medium flex items-center gap-2 shadow-sm hover:bg-gray-100 transition-colors"
+              >
+                <Copy size={18} />
+                {copiedCode ? "Copied!" : "Copy"}
+              </motion.button>
+            </div>
+          </motion.div>
 
           <div className="border-t border-gray-300 my-6" />
 
           {/* INVITE LINK */}
-          <p className="text-base font-medium text-gray-700 mb-3">
+          <motion.p className="text-base font-medium text-gray-700 mb-3">
             Your Invite Link
-          </p>
-          <div className="bg-[#d11667] rounded-2xl flex items-center justify-between px-6 py-4 text-white wrap-break-word">
-            <span className="text-base md:text-lg break-all">{inviteLink}</span>
-            <button
-              onClick={() => copy(inviteLink, "link")}
-              className="bg-white text-[#d11667] text-base h-10 px-5 rounded-lg font-medium flex items-center gap-2 shadow-sm hover:bg-gray-100 transition-colors"
-            >
-              <Copy size={18} />
-              {copiedLink ? "Copied!" : "Copy"}
-            </button>
-          </div>
+          </motion.p>
 
-          <p className="text-center text-gray-500 text-sm mt-6">
+          <motion.div
+            layout
+            className="bg-[#d11667] rounded-2xl flex items-center justify-between px-6 py-4 text-white break-words"
+          >
+            <motion.span layout className="text-base md:text-lg break-all">
+              {inviteLink}
+            </motion.span>
+
+            <div className="flex items-center gap-3">
+              <motion.button
+                onClick={() => copy(inviteLink, "link")}
+                whileTap={{ scale: 0.96 }}
+                whileHover={{ scale: 1.02 }}
+                className="bg-white text-[#d11667] text-base h-10 px-5 rounded-lg font-medium flex items-center gap-2 shadow-sm hover:bg-gray-100 transition-colors"
+              >
+                <Copy size={18} />
+                {copiedLink ? "Copied!" : "Copy"}
+              </motion.button>
+            </div>
+          </motion.div>
+
+          <AnimatePresence>
+            {(copiedCode || copiedLink) && (
+              <motion.p
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18 }}
+                className="text-center text-gray-500 text-sm mt-6"
+              >
+                {copiedCode ? "Invite code copied to clipboard" : ""}
+                {copiedLink ? "Invite link copied to clipboard" : ""}
+              </motion.p>
+            )}
+          </AnimatePresence>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.06 }}
+            className="text-center text-gray-500 text-sm mt-6"
+          >
             Share your code and earn rewards when friends join!
-          </p>
-        </div>
-      </div>
+          </motion.p>
+        </motion.div>
+      </motion.main>
 
       <BottomNav />
-    </div>
+    </motion.div>
   );
 }

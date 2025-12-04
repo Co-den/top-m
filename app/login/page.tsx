@@ -10,6 +10,11 @@ import { Phone, Lock } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "react-hot-toast";
 
+import { motion, AnimatePresence } from "framer-motion";
+
+const MotionInput = motion(Input);
+const MotionButton = motion(Button);
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -24,7 +29,6 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  
   const displayError =
     localError ?? (typeof error === "string" ? error : error ? String(error) : null);
 
@@ -44,9 +48,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4"
+    >
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-lg shadow-lg p-8 md:p-10">
+        <motion.div
+          initial={{ scale: 0.995, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 280, damping: 24 }}
+          className="bg-white rounded-lg shadow-lg p-8 md:p-10"
+        >
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
               Welcome Back
@@ -56,7 +71,13 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSignIn} className="space-y-5">
+          <motion.form
+            onSubmit={handleSignIn}
+            className="space-y-5"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28 }}
+          >
             <div>
               <label
                 htmlFor="phone"
@@ -66,7 +87,7 @@ export default function LoginPage() {
               </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
+                <MotionInput
                   id="phone"
                   name="phone"
                   type="tel"
@@ -74,6 +95,7 @@ export default function LoginPage() {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                  whileFocus={{ scale: 1.01 }}
                   required
                   aria-label="phone number"
                 />
@@ -89,7 +111,7 @@ export default function LoginPage() {
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
+                <MotionInput
                   id="password"
                   name="password"
                   type="password"
@@ -97,6 +119,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                  whileFocus={{ scale: 1.01 }}
                   required
                   aria-label="password"
                 />
@@ -117,20 +140,30 @@ export default function LoginPage() {
               </label>
             </div>
 
-            {localError || error ? (
-              <div className="text-sm text-red-600 font-medium">
-                {displayError}
-              </div>
-            ) : null}
+            <AnimatePresence initial={false}>
+              {localError || error ? (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.18 }}
+                  className="text-sm text-red-600 font-medium"
+                >
+                  {displayError}
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
 
-            <Button
+            <MotionButton
               type="submit"
               disabled={isLoading}
+              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.02 }}
               className="w-full h-11 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-60"
             >
               {isLoading ? "Logging in..." : "Sign in"}
-            </Button>
-          </form>
+            </MotionButton>
+          </motion.form>
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
@@ -150,8 +183,8 @@ export default function LoginPage() {
           >
             Create new account
           </Button>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }

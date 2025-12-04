@@ -7,6 +7,7 @@ import { Wallet, Gift, Share2, Banknote } from "lucide-react";
 import { useRouter } from "next/navigation";
 import PackageCard from "@/components/package-card";
 import { apiRequest } from "@/lib/api";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function MainHomePage() {
   const router = useRouter();
@@ -34,22 +35,42 @@ export default function MainHomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] pb-24 flex flex-col items-center">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="min-h-screen bg-[#f5f5f5] pb-24 flex flex-col items-center"
+    >
       {/* Container for content */}
       <div className="w-full max-w-3xl">
         {/* BANNER */}
-        <div className="mt-6 mx-4">
-          <Image
-            src="/banner.jpg"
-            alt="Banner"
-            width={800}
-            height={432}
-            className="w-full rounded-2xl object-cover"
-          />
-        </div>
+        <motion.div
+          layout
+          initial={{ opacity: 0, scale: 0.995 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.45 }}
+          className="mt-6 mx-4"
+        >
+          <div className="w-full rounded-2xl overflow-hidden">
+            <Image
+              src="/banner.jpg"
+              alt="Banner"
+              width={800}
+              height={432}
+              className="w-full rounded-2xl object-cover"
+            />
+          </div>
+        </motion.div>
 
         {/* QUICK ACTIONS */}
-        <div className="bg-white shadow-lg rounded-2xl mx-4 mt-6 p-5 flex justify-between">
+        <motion.div
+          layout
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05, duration: 0.32 }}
+          className="bg-white shadow-lg rounded-2xl mx-4 mt-6 p-5 flex justify-between"
+        >
           <QuickAction
             icon={<Wallet size={22} />}
             label="Recharge"
@@ -66,7 +87,7 @@ export default function MainHomePage() {
           />
           <QuickAction
             icon={<Share2 size={22} />}
-            label="invite"
+            label="Invite"
             onClick={() => router.push("/referral")}
             bgClass="bg-purple-100"
             textClass="text-purple-600"
@@ -78,27 +99,38 @@ export default function MainHomePage() {
             bgClass="bg-yellow-100"
             textClass="text-yellow-600"
           />
-        </div>
+        </motion.div>
 
         {/* PACKAGES - mapped using PackageCard pattern */}
-        <div className="mt-6 mx-4 grid grid-cols-1 md:grid-cols-2 gap-5">
-          {products.length === 0
-            ? null
-            : products.map((p: any) => (
-                <PackageCard
-                  key={p.name ?? p.id}
-                  name={String(p.name ?? "Package")}
-                  cycleDays={p.cycleDays ?? ""}
-                  price={parseNumber(p.price)}
-                  dailyReturn={parseNumber(p.dailyReturn)}
-                  totalReturn={parseNumber(p.totalReturn)}
-                />
-              ))}
-        </div>
+        <motion.section className="mt-6 mx-4 grid grid-cols-1 md:grid-cols-2 gap-5">
+          <AnimatePresence>
+            {products.length === 0
+              ? null
+              : products.map((p: any) => (
+                  <motion.div
+                    key={p._id ?? p.id ?? p.name}
+                    layout
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.28 }}
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    <PackageCard
+                      name={String(p.name ?? "Package")}
+                      cycleDays={p.cycleDays ?? ""}
+                      price={parseNumber(p.price)}
+                      dailyReturn={parseNumber(p.dailyReturn)}
+                      totalReturn={parseNumber(p.totalReturn)}
+                    />
+                  </motion.div>
+                ))}
+          </AnimatePresence>
+        </motion.section>
       </div>
 
       <BottomNav />
-    </div>
+    </motion.div>
   );
 }
 
@@ -116,13 +148,18 @@ function QuickAction({
   textClass?: string;
 }) {
   return (
-    <button onClick={onClick} className="flex flex-col items-center space-y-2">
+    <motion.button
+      onClick={onClick}
+      whileTap={{ scale: 0.96 }}
+      whileHover={{ scale: 1.02 }}
+      className="flex flex-col items-center space-y-2"
+    >
       <div
         className={`p-4 rounded-full flex items-center justify-center ${bgClass} ${textClass}`}
       >
         {icon}
       </div>
       <span className="text-sm text-black font-medium">{label}</span>
-    </button>
+    </motion.button>
   );
 }

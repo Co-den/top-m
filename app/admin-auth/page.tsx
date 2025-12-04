@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Shield, Lock, Mail, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface LoginFormData {
   email: string;
@@ -13,10 +14,13 @@ interface LoginFormData {
 interface RegisterFormData {
   fullName: string;
   email: string;
+  phoneNumber: string;
   password: string;
   confirmPassword: string;
-  accessCode: string;
 }
+
+const MotionInput = motion(Input);
+const MotionButton = motion(Button);
 
 export default function AdminAuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -33,9 +37,10 @@ export default function AdminAuthPage() {
   const [registerForm, setRegisterForm] = useState<RegisterFormData>({
     fullName: "",
     email: "",
+    phoneNumber: "",
     password: "",
     confirmPassword: "",
-    accessCode: "",
+    
   });
 
   const handleLogin = async () => {
@@ -94,9 +99,9 @@ export default function AdminAuthPage() {
           body: JSON.stringify({
             fullName: registerForm.fullName,
             email: registerForm.email,
+            phoneNumber: registerForm.phoneNumber,
             password: registerForm.password,
             confirmPassword: registerForm.confirmPassword,
-            accessCode: registerForm.accessCode,
           }),
         }
       );
@@ -123,28 +128,69 @@ export default function AdminAuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.36, ease: "easeOut" }}
+      className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4"
+    >
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-pink-500/20 rounded-full mb-4">
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="text-center mb-8"
+        >
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.06, duration: 0.3 }}
+            className="inline-flex items-center justify-center w-16 h-16 bg-pink-500/20 rounded-full mb-4"
+          >
             <Shield className="w-8 h-8 text-pink-500" />
-          </div>
-          <h1 className="text-3xl font-bold text-black mb-2">Admin Portal</h1>
-          <p className="text-black">
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-3xl font-bold text-black mb-2"
+          >
+            Admin Portal
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.12 }}
+            className="text-black"
+          >
             {isLogin ? "Sign in to manage investments" : "Create admin account"}
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
         {/* Auth Card */}
-        <div className="bg-white rounded-lg shadow-lg p-8 md:p-10">
+        <motion.div
+          layout
+          initial={{ scale: 0.995, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 280, damping: 24, delay: 0.1 }}
+          className="bg-white rounded-lg shadow-lg p-8 md:p-10"
+        >
           {/* Tab Switcher */}
-          <div className="flex gap-2 mb-6 p-1 bg-slate-800/50 rounded-lg">
-            <button
+          <motion.div
+            layout
+            className="flex gap-2 mb-6 p-1 bg-slate-800/50 rounded-lg"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.14 }}
+          >
+            <motion.button
               onClick={() => {
                 setIsLogin(true);
                 setError(null);
               }}
+              whileTap={{ scale: 0.98 }}
               className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
                 isLogin
                   ? "bg-pink-500 text-white"
@@ -152,12 +198,13 @@ export default function AdminAuthPage() {
               }`}
             >
               Login
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               onClick={() => {
                 setIsLogin(false);
                 setError(null);
               }}
+              whileTap={{ scale: 0.98 }}
               className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
                 !isLogin
                   ? "bg-pink-500 text-white"
@@ -165,223 +212,315 @@ export default function AdminAuthPage() {
               }`}
             >
               Register
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
 
           {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <p className="text-red-400 text-sm">{error}</p>
-            </div>
-          )}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.22 }}
+                className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg"
+              >
+                <p className="text-red-400 text-sm">{error}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Login Form */}
-          {isLogin ? (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <Input
-                    type="email"
-                    value={loginForm.email}
-                    onChange={(e) =>
-                      setLoginForm({ ...loginForm, email: e.target.value })
-                    }
-                    onKeyPress={(e) => handleKeyPress(e, handleLogin)}
-                    className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
-                    placeholder="admin@example.com"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-black mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    value={loginForm.password}
-                    onChange={(e) =>
-                      setLoginForm({ ...loginForm, password: e.target.value })
-                    }
-                    onKeyPress={(e) => handleKeyPress(e, handleLogin)}
-                    className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-800"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleLogin}
-                disabled={loading}
-                className="w-full bg-pink-500 hover:bg-pink-600 text-white py-6 rounded-lg font-medium disabled:opacity-50"
+          <AnimatePresence mode="wait">
+            {isLogin ? (
+              <motion.div
+                key="login"
+                initial={{ opacity: 0, x: 6 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -6 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-4"
               >
-                {loading ? "Signing in..." : "Sign In"}
-              </Button>
-            </div>
-          ) : (
-            // Register Form
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <Input
-                    type="text"
-                    value={registerForm.fullName}
-                    onChange={(e) =>
-                      setRegisterForm({
-                        ...registerForm,
-                        fullName: e.target.value,
-                      })
-                    }
-                    className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
-                    placeholder="John Doe"
-                  />
-                </div>
-              </div>
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.16 }}
+                >
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <MotionInput
+                      type="email"
+                      value={loginForm.email}
+                      onChange={(e) =>
+                        setLoginForm({ ...loginForm, email: e.target.value })
+                      }
+                      onKeyPress={(e) => handleKeyPress(e, handleLogin)}
+                      className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                      placeholder="admin@example.com"
+                      whileFocus={{ scale: 1.01 }}
+                    />
+                  </div>
+                </motion.div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <Input
-                    type="email"
-                    value={registerForm.email}
-                    onChange={(e) =>
-                      setRegisterForm({
-                        ...registerForm,
-                        email: e.target.value,
-                      })
-                    }
-                    className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
-                    placeholder="admin@example.com"
-                  />
-                </div>
-              </div>
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.18 }}
+                >
+                  <label className="block text-sm font-medium text-black mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <MotionInput
+                      type={showPassword ? "text" : "password"}
+                      value={loginForm.password}
+                      onChange={(e) =>
+                        setLoginForm({ ...loginForm, password: e.target.value })
+                      }
+                      onKeyPress={(e) => handleKeyPress(e, handleLogin)}
+                      className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-800"
+                      placeholder="••••••••"
+                      whileFocus={{ scale: 1.01 }}
+                    />
+                    <motion.button
+                      onClick={() => setShowPassword(!showPassword)}
+                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.05 }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </motion.button>
+                  </div>
+                </motion.div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    value={registerForm.password}
-                    onChange={(e) =>
-                      setRegisterForm({
-                        ...registerForm,
-                        password: e.target.value,
-                      })
-                    }
-                    className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <MotionButton
+                    onClick={handleLogin}
+                    disabled={loading}
+                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.02 }}
+                    className="w-full bg-pink-500 hover:bg-pink-600 text-white py-6 rounded-lg font-medium disabled:opacity-50"
                   >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <Input
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={registerForm.confirmPassword}
-                    onChange={(e) =>
-                      setRegisterForm({
-                        ...registerForm,
-                        confirmPassword: e.target.value,
-                      })
-                    }
-                    className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Admin Access Code
-                </label>
-                <div className="relative">
-                  <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <Input
-                    type="text"
-                    value={registerForm.accessCode}
-                    onChange={(e) =>
-                      setRegisterForm({
-                        ...registerForm,
-                        accessCode: e.target.value,
-                      })
-                    }
-                    onKeyPress={(e) => handleKeyPress(e, handleRegister)}
-                    className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
-                    placeholder="Enter admin code"
-                  />
-                </div>
-                <p className="text-xs text-slate-500 mt-2">
-                  Contact your system administrator for the admin code
-                </p>
-              </div>
-
-              <Button
-                onClick={handleRegister}
-                disabled={loading}
-                className="w-full bg-pink-500 hover:bg-pink-600 text-white py-6 rounded-lg font-medium disabled:opacity-50"
+                    {loading ? "Signing in..." : "Sign In"}
+                  </MotionButton>
+                </motion.div>
+              </motion.div>
+            ) : (
+              // Register Form
+              <motion.div
+                key="register"
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 6 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-4"
               >
-                {loading ? "Creating account..." : "Create Admin Account"}
-              </Button>
-            </div>
-          )}
-        </div>
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.16 }}
+                >
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <MotionInput
+                      type="text"
+                      value={registerForm.fullName}
+                      onChange={(e) =>
+                        setRegisterForm({
+                          ...registerForm,
+                          fullName: e.target.value,
+                        })
+                      }
+                      className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                      placeholder="John Doe"
+                      whileFocus={{ scale: 1.01 }}
+                    />
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.18 }}
+                >
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <MotionInput
+                      type="email"
+                      value={registerForm.email}
+                      onChange={(e) =>
+                        setRegisterForm({
+                          ...registerForm,
+                          email: e.target.value,
+                        })
+                      }
+                      className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                      placeholder="admin@example.com"
+                      whileFocus={{ scale: 1.01 }}
+                    />
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                > 
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Phone Number
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <MotionInput
+                      type="tel"
+                      value={registerForm.phoneNumber}
+                      onChange={(e) =>
+                        setRegisterForm({
+                          ...registerForm,
+                          phoneNumber: e.target.value,
+                        })
+                      }
+                      className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                      placeholder="+1234567890"
+                      whileFocus={{ scale: 1.01 }}
+                    />
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <MotionInput
+                      type={showPassword ? "text" : "password"}
+                      value={registerForm.password}
+                      onChange={(e) =>
+                        setRegisterForm({
+                          ...registerForm,
+                          password: e.target.value,
+                        })
+                      }
+                      className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                      placeholder="••••••••"
+                      whileFocus={{ scale: 1.01 }}
+                    />
+                    <motion.button
+                      onClick={() => setShowPassword(!showPassword)}
+                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.05 }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </motion.button>
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.22 }}
+                >
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <MotionInput
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={registerForm.confirmPassword}
+                      onChange={(e) =>
+                        setRegisterForm({
+                          ...registerForm,
+                          confirmPassword: e.target.value,
+                        })
+                      }
+                      className="pl-10 h-11 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                      placeholder="••••••••"
+                      whileFocus={{ scale: 1.01 }}
+                    />
+                    <motion.button
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.05 }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </motion.button>
+                  </div>
+                </motion.div>
+
+
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.26 }}
+                >
+                  <MotionButton
+                    onClick={handleRegister}
+                    disabled={loading}
+                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.02 }}
+                    className="w-full bg-pink-500 hover:bg-pink-600 text-white py-6 rounded-lg font-medium disabled:opacity-50"
+                  >
+                    {loading ? "Creating account..." : "Create Admin Account"}
+                  </MotionButton>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
         {/* Footer */}
-        <p className="text-center text-slate-500 text-sm mt-6">
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.28 }}
+          className="text-center text-slate-500 text-sm mt-6"
+        >
           Secured by end-to-end encryption
-        </p>
+        </motion.p>
       </div>
-    </div>
+    </motion.div>
   );
 }

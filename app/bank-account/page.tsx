@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BottomNav } from "@/components/bottom-nav";
 import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function UpdateBankPage() {
   const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
@@ -87,30 +88,48 @@ export default function UpdateBankPage() {
       );
 
       toast.success(res.data.message ?? "Bank details updated successfully");
+      setMessage(res.data.message ?? "Bank details updated successfully");
     } catch (err: any) {
-      toast.error(
-        err?.response?.data?.message ?? "Failed to update bank details"
-      );
+      const msg = err?.response?.data?.message ?? "Failed to update bank details";
+      toast.error(msg);
+      setMessage(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="min-h-screen bg-gray-50"
+    >
       {/* Header */}
-      <div className="bg-pink-600 text-white px-4 py-6 flex items-center">
+      <motion.div
+        initial={{ y: -6 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="bg-pink-600 text-white px-4 py-6 flex items-center"
+      >
         <Link href="/profile" className="flex items-center">
           <ArrowLeft className="w-6 h-6" />
         </Link>
         <h1 className="text-xl font-bold flex-1 text-center">Update Bank</h1>
-      </div>
+      </motion.div>
 
       {/* Main Content */}
       <div className="px-4 py-6 max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg p-6 border border-gray-200 space-y-5">
+        <motion.div
+          layout
+          initial={{ scale: 0.995, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 280, damping: 24 }}
+          className="bg-white rounded-lg p-6 border border-gray-200 space-y-5"
+        >
           {/* Bank Selection */}
-          <div>
+          <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
             <select
               id="bank-select"
               value={selectedBank}
@@ -124,10 +143,10 @@ export default function UpdateBankPage() {
                 </option>
               ))}
             </select>
-          </div>
+          </motion.div>
 
           {/* Account Number */}
-          <div>
+          <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
             <input
               type="text"
               placeholder="Enter account number"
@@ -137,10 +156,10 @@ export default function UpdateBankPage() {
               className="border p-2 w-full mb-4"
               maxLength={10}
             />
-          </div>
+          </motion.div>
 
           {/* Account Name */}
-          <div>
+          <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
             <input
               type="text"
               placeholder="Account Name"
@@ -148,26 +167,40 @@ export default function UpdateBankPage() {
               readOnly
               className="border p-2 w-full mb-4 bg-gray-100"
             />
-          </div>
+          </motion.div>
 
           {/* Submit Button */}
-          <Button
-            onClick={handleSaveBank}
-            disabled={loading}
-            className="w-full bg-pink-600 hover:bg-pink-700 text-white py-6 rounded-lg font-bold text-lg mt-6"
-          >
-            {loading ? "Saving..." : "Save Bank Details"}
-          </Button>
+          <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+            <motion.button
+              onClick={handleSaveBank}
+              disabled={loading}
+              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.02 }}
+              className="w-full bg-pink-600 hover:bg-pink-700 text-white py-6 rounded-lg font-bold text-lg mt-6 disabled:opacity-60"
+            >
+              {loading ? "Saving..." : "Save Bank Details"}
+            </motion.button>
+          </motion.div>
 
           {/* Feedback Message */}
-          {message && (
-            <p className="mt-4 text-center text-sm text-gray-700">{message}</p>
-          )}
-        </div>
+          <AnimatePresence>
+            {message && (
+              <motion.p
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.22 }}
+                className="mt-4 text-center text-sm text-gray-700"
+              >
+                {message}
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
 
       <BottomNav />
       <div className="h-24" />
-    </div>
+    </motion.div>
   );
 }

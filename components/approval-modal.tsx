@@ -1,283 +1,153 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { X, Download, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import { X } from "lucide-react"
 
 interface DepositRequest {
-  id: string;
-  userId: string;
-  userName: string;
-  email: string;
-  plan: string;
-  amount: number;
-  paymentProof: string;
-  status: "pending" | "approved" | "rejected";
-  submittedDate: string;
+  id: string
+  userId: string
+  userName: string
+  email: string
+  plan: string
+  amount: number
+  paymentProof: string
+  status: "pending" | "approved" | "rejected"
+  submittedDate: string
 }
 
 interface ApprovalModalProps {
-  isOpen: boolean;
-  request: DepositRequest;
-  onApprove: () => void;
-  onReject: (reason: string) => void;
-  onClose: () => void;
+  isOpen: boolean
+  request: DepositRequest
+  onApprove: () => void
+  onReject: (reason: string) => void
+  onClose: () => void
 }
 
-export default function ApprovalModal({
-  isOpen,
-  request,
-  onApprove,
-  onReject,
-  onClose,
-}: ApprovalModalProps) {
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [showRejectionForm, setShowRejectionForm] = useState(false);
+export default function ApprovalModal({ isOpen, request, onApprove, onReject, onClose }: ApprovalModalProps) {
+  const [rejectionReason, setRejectionReason] = useState("")
+  const [isRejecting, setIsRejecting] = useState(false)
+  const [isApproving, setIsApproving] = useState(false)
 
-  if (!isOpen) return null;
+  const handleApproveClick = async () => {
+    setIsApproving(true)
+    await onApprove()
+    setIsApproving(false)
+  }
 
-  // Handle rejection submission
-  const handleRejectSubmit = () => {
-    if (rejectionReason.trim()) {
-      onReject(rejectionReason);
-      setRejectionReason("");
-      setShowRejectionForm(false);
+  const handleRejectClick = async () => {
+    if (!rejectionReason.trim()) {
+      alert("Please provide a rejection reason")
+      return
     }
-  };
+    setIsRejecting(true)
+    await onReject(rejectionReason)
+    setIsRejecting(false)
+    setRejectionReason("")
+  }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-900 rounded-xl border border-slate-800 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white">Deposit Review</h2>
-          <button
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition"
+            className="fixed inset-0 bg-black/50 z-40"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", damping: 20, stiffness: 300 }}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[90vh] overflow-y-auto z-50 bg-slate-900 rounded-2xl border border-slate-800 p-8"
           >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* User Information */}
-          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-            <h3 className="text-sm font-semibold text-slate-300 mb-4">
-              User Information
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-slate-400 text-sm">Full Name</p>
-                <p className="text-white font-medium">{request.userName}</p>
-              </div>
-              <div>
-                <p className="text-slate-400 text-sm">Email</p>
-                <p className="text-white font-medium">{request.email}</p>
-              </div>
-              <div>
-                <p className="text-slate-400 text-sm">User ID</p>
-                <p className="text-white font-medium">{request.userId}</p>
-              </div>
-              <div>
-                <p className="text-slate-400 text-sm">Submission Date</p>
-                <p className="text-white font-medium">{request.submittedDate}</p>
-              </div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Review Deposit Request</h2>
+              <button onClick={onClose} className="text-slate-400 hover:text-white transition">
+                <X className="w-6 h-6" />
+              </button>
             </div>
-          </div>
 
-          {/* Investment Details */}
-          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-            <h3 className="text-sm font-semibold text-slate-300 mb-4">
-              Deposit Details
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-slate-400 text-sm">Deposit Amount</p>
-                <p className="text-white font-medium text-lg">
-                  ₦{request.amount.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Proof */}
-          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-            <h3 className="text-sm font-semibold text-slate-300 mb-4">
-              Payment Proof Verification
-            </h3>
-            <div className="bg-slate-900 rounded-lg p-4 flex items-center justify-between">
-              <div>
-                <p className="text-white font-medium">Payment Proof Document</p>
-                <p className="text-slate-400 text-sm">{request.paymentProof}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-pink-500 hover:bg-pink-500/10"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                View
-              </Button>
-            </div>
-          </div>
-
-          {/* Verification Checklist */}
-          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-            <h3 className="text-sm font-semibold text-slate-300 mb-4">
-              Verification Checklist
-            </h3>
-            <div className="space-y-3">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  defaultChecked
-                  className="w-4 h-4 rounded bg-slate-700 border-slate-600 text-pink-500"
-                />
-                <span className="text-slate-300 text-sm">
-                  Payment proof is valid and authentic
-                </span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  defaultChecked
-                  className="w-4 h-4 rounded bg-slate-700 border-slate-600 text-pink-500"
-                />
-                <span className="text-slate-300 text-sm">
-                  Amount matches investment plan
-                </span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  defaultChecked
-                  className="w-4 h-4 rounded bg-slate-700 border-slate-600 text-pink-500"
-                />
-                <span className="text-slate-300 text-sm">
-                  User information is complete and verified
-                </span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  defaultChecked
-                  className="w-4 h-4 rounded bg-slate-700 border-slate-600 text-pink-500"
-                />
-                <span className="text-slate-300 text-sm">
-                  No compliance or fraud concerns
-                </span>
-              </label>
-            </div>
-          </div>
-
-          {/* Rejection Form (Conditional) */}
-          {showRejectionForm && (
-            <div className="bg-red-500/10 rounded-lg p-4 border border-red-500/30">
-              <div className="flex items-start gap-3 mb-4">
-                <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="font-semibold text-red-300 mb-2">
-                    Rejection Reason
-                  </h4>
-                  <p className="text-red-300/80 text-sm">
-                    Please provide a reason for rejecting this application
-                  </p>
+                  <p className="text-slate-400 text-sm mb-1">User Name</p>
+                  <p className="text-white font-semibold">{request.userName}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-sm mb-1">Email</p>
+                  <p className="text-white font-semibold">{request.email}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-sm mb-1">Deposit ID</p>
+                  <p className="text-white font-semibold">{request.id}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-sm mb-1">Amount</p>
+                  <p className="text-white font-semibold">₦{request.amount.toLocaleString()}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-slate-400 text-sm mb-1">Submitted Date</p>
+                  <p className="text-white font-semibold">{request.submittedDate}</p>
                 </div>
               </div>
-              <textarea
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Enter reason for rejection..."
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                rows={4}
-              />
-            </div>
-          )}
 
-          {/* Status Display for Reviewed Items */}
-          {request.status !== "pending" && (
-            <div
-              className={`rounded-lg p-4 border ${
-                request.status === "approved"
-                  ? "bg-emerald-500/10 border-emerald-500/30"
-                  : "bg-red-500/10 border-red-500/30"
-              }`}
-            >
-              <p
-                className={
-                  request.status === "approved"
-                    ? "text-emerald-300"
-                    : "text-red-300"
-                }
-              >
-                This application has been {request.status}
-              </p>
-            </div>
-          )}
-        </div>
+              {request.paymentProof && (
+                <div>
+                  <p className="text-slate-400 text-sm mb-3">Payment Proof</p>
+                  <img
+                    src={request.paymentProof || "/placeholder.svg"}
+                    alt="Payment proof"
+                    className="w-full rounded-lg border border-slate-700 max-h-64 object-cover"
+                  />
+                </div>
+              )}
 
-        {/* Footer Actions */}
-        {request.status === "pending" && (
-          <div className="sticky bottom-0 bg-slate-800 border-t border-slate-700 px-6 py-4 flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={onClose}
-              className="text-slate-300 hover:bg-slate-700"
-            >
-              Cancel
-            </Button>
-
-            <div className="flex items-center gap-3">
-              {!showRejectionForm ? (
+              {request.status === "pending" && (
                 <>
-                  <Button
-                    onClick={() => setShowRejectionForm(true)}
-                    className="bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50"
-                    variant="outline"
-                  >
-                    Reject
-                  </Button>
-                  <Button
-                    onClick={onApprove}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white"
-                  >
-                    Approve Plan
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    onClick={() => setShowRejectionForm(false)}
-                    variant="ghost"
-                    className="text-slate-300"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleRejectSubmit}
-                    disabled={!rejectionReason.trim()}
-                    className="bg-red-500 hover:bg-red-600 text-white disabled:opacity-50"
-                  >
-                    Confirm Rejection
-                  </Button>
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Rejection Reason (if rejecting)</label>
+                    <textarea
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      placeholder="Explain why you're rejecting this request..."
+                      className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 resize-none"
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      onClick={handleApproveClick}
+                      disabled={isApproving}
+                      className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white"
+                    >
+                      {isApproving ? "Approving..." : "Approve"}
+                    </Button>
+                    <Button
+                      onClick={handleRejectClick}
+                      disabled={isRejecting}
+                      className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      {isRejecting ? "Rejecting..." : "Reject"}
+                    </Button>
+                  </div>
                 </>
               )}
-            </div>
-          </div>
-        )}
 
-        {request.status !== "pending" && (
-          <div className="bg-slate-800 border-t border-slate-700 px-6 py-4 flex items-center justify-end gap-3">
-            <Button
-              onClick={onClose}
-              className="bg-pink-500 hover:bg-pink-600 text-white"
-            >
-              Close
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+              {request.status !== "pending" && (
+                <div className="text-center py-4">
+                  <p className="text-slate-400">This request has already been {request.status}</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  )
 }
