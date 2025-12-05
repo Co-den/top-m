@@ -1,8 +1,10 @@
 import { TrendingUp, BarChart3, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 interface PackageCardProps {
+  id: string;
   name: string;
   cycleDays: string | number;
   price: number;
@@ -11,6 +13,7 @@ interface PackageCardProps {
 }
 
 export default function PackageCard({
+  id,
   name,
   cycleDays,
   price,
@@ -18,9 +21,41 @@ export default function PackageCard({
   totalReturn,
 }: PackageCardProps) {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
   const formatCurrency = (value: number) => {
     return `₦${value.toLocaleString()}`;
   };
+
+  const handleBuyPlan = async () => {
+  try {
+    setLoading(true);
+    const response = await fetch(
+      "https://top-mart-api.onrender.com/api/plans/buy",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ planId: id }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.message || "Insufficient funds for this plan");
+      return;
+    }
+
+    alert("Plan purchased successfully!");
+    router.push("/investments");
+  } catch (err) {
+    console.error("Error buying plan:", err);
+    alert("Something went wrong while purchasing the plan");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-lg bg-white">
@@ -34,7 +69,6 @@ export default function PackageCard({
       <div className="p-6 space-y-6">
         {/* Price Details */}
         <div className="space-y-4">
-          {/* Initial Investment */}
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-full bg-pink-100">
               <Wallet className="w-5 h-5 text-pink-500" strokeWidth={2.5} />
@@ -44,7 +78,6 @@ export default function PackageCard({
             </span>
           </div>
 
-          {/* Daily Return */}
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-full bg-pink-100">
               <TrendingUp className="w-5 h-5 text-pink-500" strokeWidth={2.5} />
@@ -54,7 +87,6 @@ export default function PackageCard({
             </span>
           </div>
 
-          {/* Total Return */}
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-full bg-pink-100">
               <BarChart3 className="w-5 h-5 text-pink-500" strokeWidth={2.5} />
@@ -77,10 +109,11 @@ export default function PackageCard({
 
         {/* Invest Now Button */}
         <Button
+          disabled={loading}
           className="w-full bg-linear-to-r from-pink-500 to-blue-500 hover:from-pink-600 hover:to-blue-600 text-white font-semibold py-6 rounded-lg text-base border-none"
-          onClick={() => router.push("/invest")}
+          onClick={handleBuyPlan}
         >
-          Invest Now
+          {loading ? "Processing..." : "Invest Now"}
         </Button>
       </div>
     </div>

@@ -11,16 +11,16 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function MainHomePage() {
   const router = useRouter();
-  const [products, setProducts] = useState<any[]>([]);
+  const [plans, setPlans] = useState<any[]>([]);
 
   useEffect(() => {
-    apiRequest("https://top-mart-api.onrender.com/api/products")
+    apiRequest("https://top-mart-api.onrender.com/api/plans")
       .then((data) => {
-        setProducts(Array.isArray(data?.products) ? data.products : []);
+        setPlans(Array.isArray(data?.plans) ? data.plans : []);
       })
       .catch((err) => {
-        console.error("Failed to load products:", err);
-        setProducts([]);
+        console.error("Failed to load plans:", err);
+        setPlans([]);
       });
   }, []);
 
@@ -104,9 +104,9 @@ export default function MainHomePage() {
         {/* PACKAGES - mapped using PackageCard pattern */}
         <motion.section className="mt-6 mx-4 grid grid-cols-1 md:grid-cols-2 gap-5">
           <AnimatePresence>
-            {products.length === 0
+            {plans.length === 0
               ? null
-              : products.map((p: any) => (
+              : plans.map((p: any) => (
                   <motion.div
                     key={p._id ?? p.id ?? p.name}
                     layout
@@ -117,6 +117,7 @@ export default function MainHomePage() {
                     whileHover={{ scale: 1.02 }}
                   >
                     <PackageCard
+                      id={String(p._id ?? p.id ?? "")}
                       name={String(p.name ?? "Package")}
                       cycleDays={p.cycleDays ?? ""}
                       price={parseNumber(p.price)}
