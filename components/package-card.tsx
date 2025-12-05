@@ -2,6 +2,8 @@ import { TrendingUp, BarChart3, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import toast from "react-hot-toast";
+import axios from "axios";
 
 interface PackageCardProps {
   planId: string;
@@ -22,42 +24,48 @@ export default function PackageCard({
 }: PackageCardProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const formatCurrency = (value: number) => {
     return `₦${value.toLocaleString()}`;
   };
 
-  const handleBuyPlan = async () => {
-    try {
-      setLoading(true);
-      
-      // FIXED: Correct endpoint and use 'planId' instead of 'id'
-      const response = await fetch(
-        `https://top-mart-api.onrender.com/api/plans/${planId}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ planId }),
-        }
-      );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || "Insufficient funds for this plan");
-        return;
-      }
-
-      alert("Plan purchased successfully!");
-      router.push("/investments");
-    } catch (err) {
-      console.error("Error buying plan:", err);
-      alert("Something went wrong while purchasing the plan");
-    } finally {
-      setLoading(false);
+const handleBuyPlan = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+      toast.error('Please log in to purchase a plan');
+      return;
     }
-  };
+    
+    const response = await axios.post(
+      `https://top-mart-api.onrender.com/api/plans/${planId}`,
+      { planId },
+      {
+        headers: { 
+          Authorization: `Bearer ${token}` 
+        },
+      }
+    );
+    toast.success('Plan purchased successfully!');
+  } catch (error: any) {
+    console.error('Purchase error:', error);
+    
+    if (error.response?.status === 401) {
+      toast.error('Session expired. Please log in again');
+      localStorage.removeItem('token');
+    } else {
+      toast.error(error.response?.data?.message || 'Purchase failed');
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-lg bg-white">
