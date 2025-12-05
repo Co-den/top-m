@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface PackageCardProps {
-  id: string;
+  planId: string;
   name: string;
   cycleDays: string | number;
   price: number;
@@ -13,7 +13,7 @@ interface PackageCardProps {
 }
 
 export default function PackageCard({
-  id,
+  planId,
   name,
   cycleDays,
   price,
@@ -28,39 +28,41 @@ export default function PackageCard({
   };
 
   const handleBuyPlan = async () => {
-  try {
-    setLoading(true);
-    const response = await fetch(
-      "https://top-mart-api.onrender.com/api/plans/buy",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ planId: id }),
+    try {
+      setLoading(true);
+      
+      // FIXED: Correct endpoint and use 'planId' instead of 'id'
+      const response = await fetch(
+        `https://top-mart-api.onrender.com/api/plans/${planId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ planId }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || "Insufficient funds for this plan");
+        return;
       }
-    );
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      alert(data.message || "Insufficient funds for this plan");
-      return;
+      alert("Plan purchased successfully!");
+      router.push("/investments");
+    } catch (err) {
+      console.error("Error buying plan:", err);
+      alert("Something went wrong while purchasing the plan");
+    } finally {
+      setLoading(false);
     }
-
-    alert("Plan purchased successfully!");
-    router.push("/investments");
-  } catch (err) {
-    console.error("Error buying plan:", err);
-    alert("Something went wrong while purchasing the plan");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-lg bg-white">
       {/* Gradient Header */}
-      <div className="bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 px-6 py-6">
+      <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 px-6 py-6">
         <h2 className="text-2xl font-bold text-white">{name}</h2>
         <p className="text-blue-100 text-sm">Cycle: {cycleDays} Days</p>
       </div>
@@ -110,7 +112,7 @@ export default function PackageCard({
         {/* Invest Now Button */}
         <Button
           disabled={loading}
-          className="w-full bg-linear-to-r from-pink-500 to-blue-500 hover:from-pink-600 hover:to-blue-600 text-white font-semibold py-6 rounded-lg text-base border-none"
+          className="w-full bg-gradient-to-r from-pink-500 to-blue-500 hover:from-pink-600 hover:to-blue-600 text-white font-semibold py-6 rounded-lg text-base border-none"
           onClick={handleBuyPlan}
         >
           {loading ? "Processing..." : "Invest Now"}

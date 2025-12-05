@@ -2,13 +2,13 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export async function apiRequest(
   path: string,
-  options: RequestInit & { json?: any } = {}
+  options: RequestInit & { json?: any; requireAuth?: boolean } = {}
 ) {
   const url = path.startsWith("http")
     ? path
     : `${BASE_URL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 
-  const { json, headers = {}, ...fetchOpts } = options as any;
+  const { json, requireAuth = false, headers = {}, ...fetchOpts } = options as any;
   const reqHeaders: Record<string, string> = { ...(headers as Record<string, string>) };
 
   if (json !== undefined) {
@@ -16,8 +16,8 @@ export async function apiRequest(
     fetchOpts.body = JSON.stringify(json);
   }
 
-  // default to include so cookie-based auth works; caller can override with options.credentials
-  const credentials = (options as any).credentials ?? "include";
+  // For public endpoints, don't send credentials unless explicitly required
+  const credentials = requireAuth ? "include" : "omit";
 
   let res: Response;
   try {

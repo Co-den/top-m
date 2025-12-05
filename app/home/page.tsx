@@ -13,8 +13,11 @@ export default function MainHomePage() {
   const router = useRouter();
   const [plans, setPlans] = useState<any[]>([]);
 
+
   useEffect(() => {
-    apiRequest("https://top-mart-api.onrender.com/api/plans")
+    apiRequest("https://top-mart-api.onrender.com/api/plans", {
+      requireAuth: false,
+    })
       .then((data) => {
         setPlans(Array.isArray(data?.plans) ? data.plans : []);
       })
@@ -117,7 +120,7 @@ export default function MainHomePage() {
                     whileHover={{ scale: 1.02 }}
                   >
                     <PackageCard
-                      id={String(p._id ?? p.id ?? "")}
+                      planId={String(p._id ?? p.id ?? "")}
                       name={String(p.name ?? "Package")}
                       cycleDays={p.cycleDays ?? ""}
                       price={parseNumber(p.price)}
