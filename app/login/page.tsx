@@ -27,14 +27,10 @@ export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
 
-  const displayError =
-    localError ?? (typeof error === "string" ? error : error ? String(error) : null);
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLocalError(null);
     if (!phoneNumber.trim() || !password) {
       toast.error("Please enter phone number and password.");
       return;
@@ -139,20 +135,6 @@ export default function LoginPage() {
                 Remember me
               </label>
             </div>
-
-            <AnimatePresence initial={false}>
-              {localError || error ? (
-                <motion.div
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.18 }}
-                  className="text-sm text-red-600 font-medium"
-                >
-                  {displayError}
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
 
             <MotionButton
               type="submit"
