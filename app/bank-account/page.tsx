@@ -15,7 +15,6 @@ export default function UpdateBankPage() {
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchBanks = async () => {
@@ -66,7 +65,7 @@ export default function UpdateBankPage() {
   // 🔹 Save bank details to backend
   const handleSaveBank = async () => {
     if (!selectedBank || !accountNumber || !accountName) {
-      setMessage("Please fill in all fields");
+      toast.error("Please fill in all fields");
       return;
     }
 
@@ -88,11 +87,10 @@ export default function UpdateBankPage() {
       );
 
       toast.success(res.data.message ?? "Bank details updated successfully");
-      setMessage(res.data.message ?? "Bank details updated successfully");
+      
     } catch (err: any) {
       const msg = err?.response?.data?.message ?? "Failed to update bank details";
       toast.error(msg);
-      setMessage(msg);
     } finally {
       setLoading(false);
     }
@@ -181,21 +179,6 @@ export default function UpdateBankPage() {
               {loading ? "Saving..." : "Save Bank Details"}
             </motion.button>
           </motion.div>
-
-          {/* Feedback Message */}
-          <AnimatePresence>
-            {message && (
-              <motion.p
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.22 }}
-                className="mt-4 text-center text-sm text-gray-700"
-              >
-                {message}
-              </motion.p>
-            )}
-          </AnimatePresence>
         </motion.div>
       </div>
 
