@@ -154,9 +154,21 @@ export default function ProfilePage() {
           </Section>
 
           <Section title="RECORDS" delay={0.24}>
-            <Item icon={<Banknote size={20} />} text="Deposit Records" />
-            <Item icon={<Banknote size={20} />} text="Withdrawal Records" />
-            <Item icon={<FileText size={20} />} text="Income Records" />
+            <Item
+              icon={<Banknote size={20} />}
+              text="Deposit Records"
+              path="/deposit-records"
+            />
+            <Item
+              icon={<Banknote size={20} />}
+              text="Withdrawal Records"
+              path="/withdrawal-records"
+            />
+            <Item
+              icon={<FileText size={20} />}
+              text="Income Records"
+              path="/income-records"
+            />
           </Section>
 
           <Section title="NETWORK" delay={0.28}>
@@ -247,7 +259,10 @@ function Item({ icon, text, path, onClick }: ItemProps) {
         </motion.div>
         <span className="text-[15px]">{text}</span>
       </div>
-      <motion.div whileHover={{ x: 4 }} transition={{ type: "spring", stiffness: 300 }}>
+      <motion.div
+        whileHover={{ x: 4 }}
+        transition={{ type: "spring", stiffness: 300 }}
+      >
         <ArrowRight size={18} className="text-slate-400" />
       </motion.div>
     </motion.button>
