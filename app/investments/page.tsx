@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp } from "lucide-react";
+import axios from "axios";
 
 interface Investment {
   _id: string;
@@ -31,12 +32,12 @@ export default function InvestmentsPage() {
   const fetchInvestments = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
+      const response = await axios.get(
         "https://top-mart-api.onrender.com/api/investments",
-        { credentials: "include" }
+        { withCredentials: true }
       );
-      if (response.ok) {
-        const result = await response.json();
+      if (response.status === 200) {
+        const result = response.data;
         setInvestments(result.investments ?? []);
       }
     } catch (error) {
