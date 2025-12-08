@@ -24,6 +24,7 @@ interface Investment {
 export default function InvestmentsPage() {
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchInvestments();
@@ -32,22 +33,33 @@ export default function InvestmentsPage() {
   const fetchInvestments = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await axios.get(
         "https://top-mart-api.onrender.com/api/investments",
         { withCredentials: true }
       );
-      if (response.status === 200) {
-        const result = response.data;
-        setInvestments(result.investments ?? []);
+
+      if (response.status !== 200) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const result = response.data;
+      setInvestments(
+        Array.isArray(result.investments) ? result.investments : []
+      );
     } catch (error) {
       console.error("Error fetching investments:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to fetch investments"
+      );
+      setInvestments([]);
     } finally {
       setLoading(false);
     }
   };
 
   const formatCurrency = (amount: number) => {
+    if (typeof amount !== "number" || isNaN(amount)) return "$0.00";
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
@@ -55,7 +67,7 @@ export default function InvestmentsPage() {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case "active":
         return "bg-green-500/20 text-green-700";
       case "completed":
@@ -67,6 +79,31 @@ export default function InvestmentsPage() {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    try {
+      return new Date(dateString).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return "Invalid Date";
+    }
+  };
+
+  const totalInvested = investments.reduce(
+    (sum, inv) => sum + (inv.depositAmount || 0),
+    0
+  );
+  const totalEarned = investments.reduce(
+    (sum, inv) => sum + (inv.totalEarned || 0),
+    0
+  );
+  const activeCount = investments.filter(
+    (inv) => inv.status === "active"
+  ).length;
+
   return (
     <div className="flex-1 flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
@@ -74,23 +111,33 @@ export default function InvestmentsPage() {
           <h1 className="text-3xl text-pink-500 font-bold">
             Investments Management
           </h1>
-          <p className="text-foreground/60">
+          <p className="text-gray-600 dark:text-gray-400">
             View and manage all investments in the system
           </p>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <p className="font-bold">Error</p>
+          <p>{error}</p>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-lg border border-border p-4"
+          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-foreground/60">Total Investments</p>
-              <p className="text-2xl font-bold text-foreground">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Total Investments
+              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {investments.length}
               </p>
             </div>
@@ -102,14 +149,14 @@ export default function InvestmentsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-card rounded-lg border border-border p-4"
+          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-foreground/60">Active Investments</p>
-              <p className="text-2xl font-bold text-green-600">
-                {investments.filter((inv) => inv.status === "active").length}
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Active Investments
               </p>
+              <p className="text-2xl font-bold text-green-600">{activeCount}</p>
             </div>
           </div>
         </motion.div>
@@ -118,15 +165,15 @@ export default function InvestmentsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-card rounded-lg border border-border p-4"
+          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-foreground/60">Total Earned</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Total Earned
+              </p>
               <p className="text-2xl font-bold text-blue-600">
-                {formatCurrency(
-                  investments.reduce((sum, inv) => sum + inv.totalEarned, 0)
-                )}
+                {formatCurrency(totalEarned)}
               </p>
             </div>
           </div>
@@ -137,43 +184,52 @@ export default function InvestmentsPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-card rounded-lg border border-border overflow-hidden"
+        className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm"
       >
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-muted border-b border-border">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
                   Plan ID
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
                   Deposit Amount
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
                   Daily Return
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
                   Total Earned
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
                   Status
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
                   Start Date
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
                   End Date
                 </th>
               </tr>
             </thead>
             <tbody>
-              {investments.length === 0 ? (
+              {loading ? (
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-6 py-8 text-center text-foreground/60"
+                    className="px-6 py-8 text-center text-gray-600 dark:text-gray-400"
                   >
-                    {loading ? "Loading..." : "No investments found"}
+                    Loading investments...
+                  </td>
+                </tr>
+              ) : investments.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-6 py-8 text-center text-gray-600 dark:text-gray-400"
+                  >
+                    No investments found
                   </td>
                 </tr>
               ) : (
@@ -182,18 +238,18 @@ export default function InvestmentsPage() {
                     key={investment._id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="border-b border-border hover:bg-muted/50 transition-colors"
+                    className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                   >
-                    <td className="px-6 py-4 text-sm font-medium text-foreground">
-                      {investment.planId}
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                      {investment.planId || "N/A"}
                     </td>
-                    <td className="px-6 py-4 text-sm text-foreground">
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                       {formatCurrency(investment.depositAmount)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-foreground">
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                       {formatCurrency(investment.dailyReturn)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-foreground font-semibold">
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white font-semibold">
                       {formatCurrency(investment.totalEarned)}
                     </td>
                     <td className="px-6 py-4 text-sm">
@@ -202,22 +258,14 @@ export default function InvestmentsPage() {
                           investment.status
                         )}`}
                       >
-                        {investment.status}
+                        {investment.status || "unknown"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-foreground">
-                      {investment.investmentStart
-                        ? new Date(
-                            investment.investmentStart
-                          ).toLocaleDateString()
-                        : "N/A"}
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {formatDate(investment.investmentStart)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-foreground">
-                      {investment.investmentEnd
-                        ? new Date(
-                            investment.investmentEnd
-                          ).toLocaleDateString()
-                        : "N/A"}
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {formatDate(investment.investmentEnd)}
                     </td>
                   </motion.tr>
                 ))
