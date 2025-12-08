@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreatePlanModal } from "@/components/create-plan-modal";
+import axios from "axios";
 
 interface Plan {
   _id: string;
@@ -30,12 +31,12 @@ export default function PlansPage() {
   const fetchPlans = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
+      const response = await axios.get(
         "https://top-mart-api.onrender.com/api/plans",
-        { credentials: "include" }
+        { withCredentials: true }
       );
-      if (response.ok) {
-        const result = await response.json();
+      if (response.status === 200) {
+        const result = response.data;
         setPlans(result.products ?? []);
       }
     } catch (error) {
@@ -49,7 +50,7 @@ export default function PlansPage() {
     planData: Omit<Plan, "_id" | "createdAt">
   ) => {
     try {
-      const response = await fetch(
+      const response = await axios.post(
         "https://top-mart-api.onrender.com/admin/plans",
         {
           method: "POST",
@@ -58,8 +59,8 @@ export default function PlansPage() {
           body: JSON.stringify(planData),
         }
       );
-      if (response.ok) {
-        const newPlan = await response.json();
+      if (response.status === 200) {
+        const newPlan = response.data.plan;
         setPlans([...plans, newPlan]);
         setIsCreateModalOpen(false);
       }
@@ -70,14 +71,13 @@ export default function PlansPage() {
 
   const handleDeletePlan = async (planId: string) => {
     try {
-      const response = await fetch(
+      const response = await axios.delete(
         `https://top-mart-api.onrender.com/admin/plans/${planId}`,
         {
-          method: "DELETE",
-          credentials: "include",
+          withCredentials: true,
         }
       );
-      if (response.ok) {
+      if (response.status === 200) {
         setPlans(plans.filter((p) => p._id !== planId));
       }
     } catch (error) {
