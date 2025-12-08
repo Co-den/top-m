@@ -2,22 +2,33 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useAuthStore } from "@/store/authStore";
+import axios from "axios";
 
 interface DepositRecord {
   id: string;
   amount: number;
   date: string;
-  status: "completed" | "pending" | "failed";
+  status:
+    | "completed"
+    | "pending"
+    | "failed"
+    | "awaiting_approval"
+    | "successful"
+    | "rejected";
   reference: string;
   method: string;
 }
 
 export default function DepositRecordsPage() {
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [deposits, setDeposits] = useState<DepositRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,54 +37,83 @@ export default function DepositRecordsPage() {
   // Fetch user's personal deposits from API
   useEffect(() => {
     const fetchUserDeposits = async () => {
+      // Check authentication first
+      if (!isAuthenticated) {
+        setError("Not authenticated. Redirecting to login...");
+        setLoading(false);
+        setTimeout(() => {
+          router.push("/login");
+        }, 1500);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
 
-        // Get user token from your auth system
+        // Get user token
         const token = localStorage.getItem("token");
 
         if (!token) {
-          throw new Error("Not authenticated. Please login.");
+          setError("Session expired. Please login again.");
+          setLoading(false);
+          setTimeout(() => {
+            router.push("/login");
+          }, 1500);
+          return;
         }
 
-        // Fetch only the authenticated user's deposits
-        const response = await fetch(
-          "https://top-mart-api.onrender.com/api/user/deposits",
+        // Fetch only the authenticated user's deposits using axios
+        const response = await axios.get(
+          "https://top-mart-api.onrender.com/api/users/deposits",
           {
-            method: "GET",
             headers: {
-              "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
+            withCredentials: true,
           }
         );
 
-        if (response.status === 401) {
-          throw new Error("Session expired. Please login again.");
-        }
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch deposits: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        // Adjust based on your API response structure
-        // API should return only deposits for the authenticated user
-        setDeposits(data.deposits || data);
-      } catch (err) {
+        // Backend returns: { status: "success", data: [...] }
+        setDeposits(response.data.data || []);
+      } catch (err: any) {
         console.error("Error fetching user deposits:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load deposits"
-        );
+        console.error("Error response:", err.response?.data);
+
+        // Handle axios errors
+        if (err.response) {
+          // Server responded with error status
+          console.log("Server error status:", err.response.status);
+          console.log("Server error data:", err.response.data);
+
+          if (err.response.status === 401) {
+            setError("Session expired. Please login again.");
+            setTimeout(() => {
+              router.push("/login");
+            }, 1500);
+          } else if (err.response.status === 500) {
+            const serverMessage =
+              err.response.data?.message || err.response.data?.error;
+            setError(
+              `Server error: ${serverMessage || "Please check backend logs"}`
+            );
+          } else {
+            setError(err.response.data?.message || "Failed to load deposits");
+          }
+        } else if (err.request) {
+          // Request made but no response
+          setError("Network error. Please check your connection.");
+        } else {
+          // Other errors
+          setError(err.message || "Failed to load deposits");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserDeposits();
-  }, []);
+  }, [isAuthenticated, router]);
 
   const filteredDeposits = deposits.filter(
     (deposit) =>
@@ -84,10 +124,14 @@ export default function DepositRecordsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
+      case "successful":
         return "bg-green-100 text-green-800";
       case "pending":
         return "bg-yellow-100 text-yellow-800";
+      case "awaiting_approval":
+        return "bg-blue-100 text-blue-800";
       case "failed":
+      case "rejected":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -96,7 +140,7 @@ export default function DepositRecordsPage() {
 
   const totalDeposits = deposits.length;
   const totalAmount = deposits
-    .filter((d) => d.status === "completed")
+    .filter((d) => d.status === "completed" || d.status === "successful")
     .reduce((sum, d) => sum + d.amount, 0);
 
   return (

@@ -31,7 +31,7 @@ export default function PlansPage() {
     try {
       setLoading(true);
       const response = await fetch(
-        "https://top-mart-api.onrender.com/api/products",
+        "https://top-mart-api.onrender.com/api/plans",
         { credentials: "include" }
       );
       if (response.ok) {
