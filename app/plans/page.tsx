@@ -89,14 +89,15 @@ export default function PlansPage() {
     <div className="flex-1 flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl text-pink-500 font-bold">
-            Plans Management
-          </h1>
+          <h1 className="text-3xl text-pink-500 font-bold">Plans Management</h1>
           <p className="text-foreground/60">
             Create and manage investment plans
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2 bg-pink-500">
+        <Button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="gap-2 bg-pink-500"
+        >
           <Plus className="h-4 w-4" />
           Create Plan
         </Button>
@@ -129,7 +130,9 @@ export default function PlansPage() {
                 <p className="text-3xl font-bold text-primary mb-2">
                   ${plan.price}
                 </p>
-                <p className="text-sm text-foreground/60">Daily Cycle: {plan.dailyReturn}</p>
+                <p className="text-sm text-foreground/60">
+                  Daily Cycle: {plan.dailyReturn}
+                </p>
               </div>
 
               <div className="mb-6">

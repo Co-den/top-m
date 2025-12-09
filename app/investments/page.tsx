@@ -5,10 +5,24 @@ import { motion } from "framer-motion";
 import { TrendingUp } from "lucide-react";
 import axios from "axios";
 
+interface Plan {
+  _id: string;
+  name: string;
+  dailyReturn: number;
+  duration?: number;
+}
+
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+}
+
 interface Investment {
   _id: string;
-  userId: string;
-  planId: string;
+  userId: string | User;
+  planId: string | Plan;
   depositAmount: number;
   investmentStart: string;
   investmentEnd: string;
@@ -43,7 +57,7 @@ export default function InvestmentsPage() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result = response.data;
+      const result = await response.data;
       setInvestments(
         Array.isArray(result.investments) ? result.investments : []
       );
@@ -90,6 +104,16 @@ export default function InvestmentsPage() {
     } catch {
       return "Invalid Date";
     }
+  };
+
+  const getPlanName = (planId: string | Plan) => {
+    if (typeof planId === "string") return planId;
+    return planId?.name || planId?._id || "N/A";
+  };
+
+  const getUserInfo = (userId: string | User) => {
+    if (typeof userId === "string") return userId;
+    return userId?.name || userId?._id || "N/A";
   };
 
   const totalInvested = investments.reduce(
@@ -191,7 +215,10 @@ export default function InvestmentsPage() {
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
-                  Plan ID
+                  Plan Name
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                  User
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
                   Deposit Amount
@@ -217,7 +244,7 @@ export default function InvestmentsPage() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-6 py-8 text-center text-gray-600 dark:text-gray-400"
                   >
                     Loading investments...
@@ -226,7 +253,7 @@ export default function InvestmentsPage() {
               ) : investments.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-6 py-8 text-center text-gray-600 dark:text-gray-400"
                   >
                     No investments found
@@ -241,7 +268,10 @@ export default function InvestmentsPage() {
                     className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                   >
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                      {investment.planId || "N/A"}
+                      {getPlanName(investment.planId)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {getUserInfo(investment.userId)}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                       {formatCurrency(investment.depositAmount)}
