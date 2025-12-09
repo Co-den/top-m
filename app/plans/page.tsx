@@ -37,7 +37,7 @@ export default function PlansPage() {
       );
       if (response.status === 200) {
         const result = response.data;
-        setPlans(result.products ?? []);
+        setPlans(result.plans ?? []);
       }
     } catch (error) {
       console.error("Error fetching plans:", error);
