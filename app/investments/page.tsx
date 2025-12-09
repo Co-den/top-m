@@ -73,10 +73,10 @@ export default function InvestmentsPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    if (typeof amount !== "number" || isNaN(amount)) return "$0.00";
-    return new Intl.NumberFormat("en-US", {
+    if (typeof amount !== "number" || isNaN(amount)) return "N0.00";
+    return new Intl.NumberFormat("en-NG", {
       style: "currency",
-      currency: "USD",
+      currency: "NGN",
     }).format(amount);
   };
 
