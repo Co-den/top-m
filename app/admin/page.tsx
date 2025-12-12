@@ -289,7 +289,7 @@ export default function AdminDashboard() {
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
                 currentPage === item.id
-                  ? "bg-pink-500 text-white"
+                  ? "bg-primary text-primary-foreground"
                   : "text-white hover:bg-pink-500"
               )}
             >
