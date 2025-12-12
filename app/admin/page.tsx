@@ -272,7 +272,7 @@ export default function AdminDashboard() {
         className="hidden md:flex bg-card border-r border-border flex-col overflow-hidden shrink-0"
       >
         <div className="p-6 border-b border-border">
-          <h2 className="text-2xl font-bold text-primary">TopMart</h2>
+          <h2 className="text-2xl font-bold text-pink-500">TopMart</h2>
           <p className="text-sm text-muted-foreground">Admin</p>
         </div>
 
@@ -289,8 +289,8 @@ export default function AdminDashboard() {
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
                 currentPage === item.id
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground hover:bg-accent"
+                  ? "bg-pink-500 text-white"
+                  : "text-white hover:bg-pink-500"
               )}
             >
               <item.icon className="h-5 w-5" />
