@@ -7,41 +7,48 @@ import { ChevronLeft } from "lucide-react";
 
 export default function ProductsPage() {
   const router = useRouter();
-  return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      <div className="max-w-md mx-auto">
-          <motion.div
-            initial={{ y: -6, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.3 }}
-            className="bg-[#e81d78] text-white px-5 py-5 flex items-center justify-between"
-          >
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              whileHover={{ scale: 1.05 }}
-              className="p-2 -ml-2 hover:bg-pink-600 rounded"
-              onClick={() => router.push("/home")}
-            >
-              <ChevronLeft size={24} />
-            </motion.button>
-            <h1 className="text-xl font-bold flex-1 text-center">
-              Products
-            </h1>
-          </motion.div>
 
-        <div className="p-4">
-          <motion.div
-            className="bg-white rounded-lg shadow p-6 text-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-          >
-            <p className="text-slate-600">Products coming soon...</p>
-          </motion.div>
-        </div>
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.36, ease: "easeOut" }}
+      className="min-h-screen flex flex-col bg-[#f7f7f7]"
+    >
+      {/* Header */}
+      <motion.div
+        initial={{ y: -6, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="bg-[#e81d78] text-white px-5 py-5 flex items-center justify-between"
+      >
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.05 }}
+          className="p-2 -ml-2 hover:bg-pink-600 rounded"
+          onClick={() => router.push("/home")}
+        >
+          <ChevronLeft size={24} />
+        </motion.button>
+        <h1 className="text-xl font-bold flex-1 text-center">Products</h1>
+        <div className="w-10" />
+      </motion.div>
+
+      {/* Content */}
+      <div className="flex-1 p-4 pb-24">
+        <motion.div
+          className="bg-white rounded-lg shadow p-6 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+        >
+          <p className="text-slate-600">Products coming soon...</p>
+        </motion.div>
       </div>
 
+      {/* Bottom Navigation */}
       <BottomNav />
-    </div>
+    </motion.div>
   );
 }
