@@ -163,7 +163,7 @@ export default function SharePage() {
       transition={{ duration: 0.36, ease: "easeOut" }}
       className="min-h-screen flex flex-col bg-[#f7f7f7]"
     >
-      {/* HEADER */}
+    
       {/* Header */}
       <motion.div
         initial={{ y: -6, opacity: 0 }}

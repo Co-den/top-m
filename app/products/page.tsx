@@ -1,21 +1,34 @@
-"use client"
+"use client";
 
-import { BottomNav } from "@/components/bottom-nav"
-import { motion } from "framer-motion"
+import { BottomNav } from "@/components/bottom-nav";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { ChevronLeft } from "lucide-react";
 
 export default function ProductsPage() {
+  const router = useRouter();
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       <div className="max-w-md mx-auto">
         <div className="bg-pink-500 text-white p-6 flex justify-center">
-          <motion.h1
-            className="text-2xl font-bold"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+          <motion.div
+            initial={{ y: -6, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="bg-[#e81d78] text-white px-5 py-5 flex items-center justify-between"
           >
-            Products
-          </motion.h1>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.05 }}
+              className="p-2 -ml-2 hover:bg-pink-600 rounded"
+              onClick={() => router.push("/home")}
+            >
+              <ChevronLeft size={24} />
+            </motion.button>
+            <h1 className="text-xl font-bold flex-1 text-center">
+              Products
+            </h1>
+          </motion.div>
         </div>
 
         <div className="p-4">
@@ -32,5 +45,5 @@ export default function ProductsPage() {
 
       <BottomNav />
     </div>
-  )
+  );
 }
