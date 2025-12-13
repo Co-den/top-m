@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, ArrowLeft, Users, TrendingUp, Award } from "lucide-react";
+import { Copy, ArrowLeft, Users, TrendingUp, Award, ChevronLeft } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
@@ -157,31 +157,22 @@ export default function SharePage() {
       className="min-h-screen flex flex-col bg-[#f7f7f7]"
     >
       {/* HEADER */}
+      {/* Header */}
       <motion.div
         initial={{ y: -6, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.28 }}
-        className="w-full flex justify-center py-6 px-4"
+        transition={{ duration: 0.3 }}
+        className="bg-[#e81d78] text-white px-5 py-5 flex items-center justify-between"
       >
-        <div className="bg-[#e81d78] text-white flex items-center justify-between px-6 py-5 rounded-xl max-w-3xl w-full shadow-lg">
-          <motion.button
-            onClick={() => router.back()}
-            whileTap={{ scale: 0.95 }}
-            className="text-white flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/20 transition-colors"
-          >
-            <ArrowLeft size={24} />
-          </motion.button>
-
-          <motion.span
-            initial={{ scale: 0.995 }}
-            animate={{ scale: 1 }}
-            className="text-[20px] font-semibold flex-1 text-center"
-          >
-            Share & Earn
-          </motion.span>
-
-          <div className="w-10" />
-        </div>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.05 }}
+          className="p-2 -ml-2 hover:bg-pink-600 rounded"
+          onClick={() => router.push("/home")}
+        >
+          <ChevronLeft size={24} />
+        </motion.button>
+        <h1 className="text-xl font-bold flex-1 text-center">Share & Earn</h1>
       </motion.div>
 
       {/* CONTENT */}
