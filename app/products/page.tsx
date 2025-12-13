@@ -10,7 +10,6 @@ export default function ProductsPage() {
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       <div className="max-w-md mx-auto">
-        <div className="bg-pink-500 text-white p-6 flex justify-center">
           <motion.div
             initial={{ y: -6, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -29,7 +28,6 @@ export default function ProductsPage() {
               Products
             </h1>
           </motion.div>
-        </div>
 
         <div className="p-4">
           <motion.div
