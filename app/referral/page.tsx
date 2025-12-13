@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, ArrowLeft, Users, TrendingUp, Award, ChevronLeft } from "lucide-react";
+import {
+  Copy,
+  ArrowLeft,
+  Users,
+  TrendingUp,
+  Award,
+  ChevronLeft,
+} from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
@@ -299,15 +306,18 @@ export default function SharePage() {
 
           <AnimatePresence>
             {(copiedCode || copiedLink) && (
-              <motion.p
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.18 }}
-                className="text-center text-green-600 text-sm mt-4 font-medium"
+              <motion.div
+                initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2"
               >
-                ✓ {copiedCode ? "Code" : "Link"} copied to clipboard!
-              </motion.p>
+                <span className="text-xl">✓</span>
+                <span className="font-medium">
+                  {copiedCode ? "Code" : "Link"} copied to clipboard!
+                </span>
+              </motion.div>
             )}
           </AnimatePresence>
 
