@@ -67,7 +67,7 @@ export default function WithdrawalRecordsPage() {
 
         // Fetch only the authenticated user's withdrawals using axios
         const response = await axios.get(
-          "https://top-mart-api.onrender.com/api/users/user-withdrawal",
+          "https://top-mart-api.onrender.com/api/users/user-withdrawals",
           {
             headers: {
               Authorization: `Bearer ${token}`,

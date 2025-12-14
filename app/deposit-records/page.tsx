@@ -70,7 +70,7 @@ export default function DepositRecordsPage() {
 
         // Fetch only the authenticated user's deposits using axios
         const response = await axios.get(
-          "https://top-mart-api.onrender.com/api/users/user-deposit",
+          "https://top-mart-api.onrender.com/api/users/user-deposits",
           {
             headers: {
               Authorization: `Bearer ${token}`,
