@@ -63,6 +63,11 @@ export default function DepositRecordsPage() {
           return;
         }
 
+        console.log(
+          "Fetching deposits with token:",
+          token.substring(0, 20) + "..."
+        );
+
         // Fetch only the authenticated user's deposits using axios
         const response = await axios.get(
           "https://top-mart-api.onrender.com/api/users/deposits",
@@ -74,37 +79,58 @@ export default function DepositRecordsPage() {
           }
         );
 
+        console.log("Deposit API Response:", response.data);
+
         // Backend returns: { status: "success", data: [...] }
-        setDeposits(response.data.data || []);
+        if (response.data.status === "success") {
+          const depositsData = response.data.data || [];
+          console.log("Deposits received:", depositsData.length);
+          setDeposits(depositsData);
+        } else {
+          console.error("Unexpected response format:", response.data);
+          setError("Unexpected response format from server");
+        }
       } catch (err: any) {
         console.error("Error fetching user deposits:", err);
-        console.error("Error response:", err.response?.data);
 
         // Handle axios errors
         if (err.response) {
           // Server responded with error status
-          console.log("Server error status:", err.response.status);
-          console.log("Server error data:", err.response.data);
+          console.error("Server error status:", err.response.status);
+          console.error("Server error data:", err.response.data);
 
           if (err.response.status === 401) {
             setError("Session expired. Please login again.");
+            // Clear token on 401
+            localStorage.removeItem("token");
             setTimeout(() => {
               router.push("/login");
             }, 1500);
           } else if (err.response.status === 500) {
             const serverMessage =
-              err.response.data?.message || err.response.data?.error;
-            setError(
-              `Server error: ${serverMessage || "Please check backend logs"}`
-            );
+              err.response.data?.message ||
+              err.response.data?.error ||
+              "Internal server error";
+            setError(`Server error: ${serverMessage}`);
+            console.error("Full server error:", err.response.data);
+          } else if (err.response.status === 404) {
+            setError("Deposit endpoint not found. Please check the API route.");
           } else {
-            setError(err.response.data?.message || "Failed to load deposits");
+            setError(
+              err.response.data?.message ||
+                err.response.data?.error ||
+                "Failed to load deposits"
+            );
           }
         } else if (err.request) {
           // Request made but no response
-          setError("Network error. Please check your connection.");
+          console.error("No response received:", err.request);
+          setError(
+            "Network error. Please check your connection and try again."
+          );
         } else {
           // Other errors
+          console.error("Error:", err.message);
           setError(err.message || "Failed to load deposits");
         }
       } finally {
@@ -136,6 +162,14 @@ export default function DepositRecordsPage() {
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const getStatusLabel = (status: string) => {
+    // Convert underscores to spaces and capitalize
+    return status
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   const totalDeposits = deposits.length;
@@ -170,14 +204,25 @@ export default function DepositRecordsPage() {
             <p className="text-red-600 font-medium mb-2">
               Error Loading Deposits
             </p>
-            <p className="text-sm text-red-500 mb-4">{error}</p>
-            <Button
-              onClick={() => window.location.reload()}
-              variant="outline"
-              className="border-red-300 text-red-600 hover:bg-red-100"
-            >
-              Try Again
-            </Button>
+            <p className="text-sm text-red-500 mb-4 whitespace-pre-wrap">
+              {error}
+            </p>
+            <div className="flex gap-2 justify-center">
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+                className="border-red-300 text-red-600 hover:bg-red-100"
+              >
+                Try Again
+              </Button>
+              <Button
+                onClick={() => router.push("/profile")}
+                variant="outline"
+                className="border-gray-300 text-gray-600 hover:bg-gray-100"
+              >
+                Go Back
+              </Button>
+            </div>
           </Card>
         ) : (
           <>
@@ -228,8 +273,7 @@ export default function DepositRecordsPage() {
                         </p>
                       </div>
                       <Badge className={getStatusColor(deposit.status)}>
-                        {deposit.status.charAt(0).toUpperCase() +
-                          deposit.status.slice(1)}
+                        {getStatusLabel(deposit.status)}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
@@ -249,6 +293,12 @@ export default function DepositRecordsPage() {
                       ? "No matching deposits found"
                       : "No deposits yet"}
                   </p>
+                  {!searchTerm && (
+                    <p className="text-sm text-gray-400 mt-2">
+                      Your deposit history will appear here once you make a
+                      deposit
+                    </p>
+                  )}
                 </Card>
               )}
             </div>
