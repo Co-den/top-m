@@ -2,22 +2,30 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useAuthStore } from "@/store/authStore";
+import axios from "axios";
 
 interface WithdrawalRecord {
   id: string;
   amount: number;
   date: string;
-  status: "completed" | "pending" | "failed";
+  status: "pending" | "success" | "failed";
   reference: string;
-  bankAccount: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  method?: string;
 }
 
 export default function WithdrawalRecordsPage() {
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [withdrawals, setWithdrawals] = useState<WithdrawalRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,65 +34,125 @@ export default function WithdrawalRecordsPage() {
   // Fetch user's personal withdrawals from API
   useEffect(() => {
     const fetchUserWithdrawals = async () => {
+      // Check authentication first
+      if (!isAuthenticated) {
+        setError("Not authenticated. Redirecting to login...");
+        setLoading(false);
+        setTimeout(() => {
+          router.push("/login");
+        }, 1500);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
 
-        // Get user token from your auth system
+        // Get user token
         const token = localStorage.getItem("token");
+
         if (!token) {
-          throw new Error("Not authenticated. Please login.");
+          setError("Session expired. Please login again.");
+          setLoading(false);
+          setTimeout(() => {
+            router.push("/login");
+          }, 1500);
+          return;
         }
 
-        // Fetch only the authenticated user's withdrawals
-        const response = await fetch(
-          "https://top-mart-api.onrender.com/api/user/withdrawals",
+        console.log(
+          "Fetching withdrawals with token:",
+          token.substring(0, 20) + "..."
+        );
+
+        // Fetch only the authenticated user's withdrawals using axios
+        const response = await axios.get(
+          "https://top-mart-api.onrender.com/api/users/user-withdrawal",
           {
-            method: "GET",
             headers: {
-              "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
+            withCredentials: true,
           }
         );
 
-        if (response.status === 401) {
-          throw new Error("Session expired. Please login again.");
+        console.log("Withdrawal API Response:", response.data);
+
+        // Backend returns: { status: "success", data: [...] }
+        if (response.data.status === "success") {
+          const withdrawalsData = response.data.data || [];
+          console.log("Withdrawals received:", withdrawalsData.length);
+          setWithdrawals(withdrawalsData);
+        } else {
+          console.error("Unexpected response format:", response.data);
+          setError("Unexpected response format from server");
         }
-
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch withdrawals: ${response.statusText}`
-          );
-        }
-
-        const data = await response.json();
-
-        // Adjust based on your API response structure
-        // API should return only withdrawals for the authenticated user
-        setWithdrawals(data.withdrawals || data);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching user withdrawals:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load withdrawals"
-        );
+
+        // Handle axios errors
+        if (err.response) {
+          // Server responded with error status
+          console.error("Server error status:", err.response.status);
+          console.error("Server error data:", err.response.data);
+
+          if (err.response.status === 401) {
+            setError("Session expired. Please login again.");
+            // Clear token on 401
+            localStorage.removeItem("token");
+            setTimeout(() => {
+              router.push("/login");
+            }, 1500);
+          } else if (err.response.status === 500) {
+            const serverMessage =
+              err.response.data?.message ||
+              err.response.data?.error ||
+              "Internal server error";
+            setError(`Server error: ${serverMessage}`);
+            console.error("Full server error:", err.response.data);
+          } else if (err.response.status === 404) {
+            setError(
+              "Withdrawal endpoint not found. Please check the API route."
+            );
+          } else {
+            setError(
+              err.response.data?.message ||
+                err.response.data?.error ||
+                "Failed to load withdrawals"
+            );
+          }
+        } else if (err.request) {
+          // Request made but no response
+          console.error("No response received:", err.request);
+          setError(
+            "Network error. Please check your connection and try again."
+          );
+        } else {
+          // Other errors
+          console.error("Error:", err.message);
+          setError(err.message || "Failed to load withdrawals");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserWithdrawals();
-  }, []);
+  }, [isAuthenticated, router]);
 
   const filteredWithdrawals = withdrawals.filter(
     (withdrawal) =>
       withdrawal.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      withdrawal.bankAccount.toLowerCase().includes(searchTerm.toLowerCase())
+      withdrawal.bankName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      withdrawal.accountNumber
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      withdrawal.accountName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed":
+      case "success":
         return "bg-green-100 text-green-800";
       case "pending":
         return "bg-yellow-100 text-yellow-800";
@@ -95,9 +163,14 @@ export default function WithdrawalRecordsPage() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    // Capitalize status
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
   const totalWithdrawals = withdrawals.length;
   const totalAmount = withdrawals
-    .filter((w) => w.status === "completed")
+    .filter((w) => w.status === "success")
     .reduce((sum, w) => sum + w.amount, 0);
 
   return (
@@ -127,14 +200,25 @@ export default function WithdrawalRecordsPage() {
             <p className="text-red-600 font-medium mb-2">
               Error Loading Withdrawals
             </p>
-            <p className="text-sm text-red-500 mb-4">{error}</p>
-            <Button
-              onClick={() => window.location.reload()}
-              variant="outline"
-              className="border-red-300 text-red-600 hover:bg-red-100"
-            >
-              Try Again
-            </Button>
+            <p className="text-sm text-red-500 mb-4 whitespace-pre-wrap">
+              {error}
+            </p>
+            <div className="flex gap-2 justify-center">
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+                className="border-red-300 text-red-600 hover:bg-red-100"
+              >
+                Try Again
+              </Button>
+              <Button
+                onClick={() => router.push("/profile")}
+                variant="outline"
+                className="border-gray-300 text-gray-600 hover:bg-gray-100"
+              >
+                Go Back
+              </Button>
+            </div>
           </Card>
         ) : (
           <>
@@ -161,7 +245,7 @@ export default function WithdrawalRecordsPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <Input
-                  placeholder="Search by reference or bank..."
+                  placeholder="Search by reference, bank, or account..."
                   className="pl-10"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -183,12 +267,14 @@ export default function WithdrawalRecordsPage() {
                           {withdrawal.reference}
                         </h3>
                         <p className="text-sm text-gray-500 mt-1">
-                          {withdrawal.bankAccount}
+                          {withdrawal.bankName}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {withdrawal.accountName} • {withdrawal.accountNumber}
                         </p>
                       </div>
                       <Badge className={getStatusColor(withdrawal.status)}>
-                        {withdrawal.status.charAt(0).toUpperCase() +
-                          withdrawal.status.slice(1)}
+                        {getStatusLabel(withdrawal.status)}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
@@ -208,6 +294,12 @@ export default function WithdrawalRecordsPage() {
                       ? "No matching withdrawals found"
                       : "No withdrawals yet"}
                   </p>
+                  {!searchTerm && (
+                    <p className="text-sm text-gray-400 mt-2">
+                      Your withdrawal history will appear here once you make a
+                      withdrawal
+                    </p>
+                  )}
                 </Card>
               )}
             </div>
