@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Search, Loader2 } from "lucide-react";
+import axios, { AxiosError } from "axios";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/store/authStore";
-import axios from "axios";
 
 interface WithdrawalRecord {
   id: string;
@@ -26,128 +27,83 @@ interface WithdrawalRecord {
 export default function WithdrawalRecordsPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [withdrawals, setWithdrawals] = useState<WithdrawalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch user's personal withdrawals from API
-  useEffect(() => {
-    const fetchUserWithdrawals = async () => {
-      // Check authentication first
-      if (!isAuthenticated) {
-        setError("Not authenticated. Redirecting to login...");
-        setLoading(false);
-        setTimeout(() => {
-          router.push("/login");
-        }, 1500);
-        return;
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString("en-NG", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+
+  const fetchUserWithdrawals = useCallback(async () => {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+    if (!isAuthenticated || !token) {
+      setError("Session expired. Please login again.");
+      setLoading(false);
+      router.push("/login");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await axios.get(
+        "https://top-mart-api.onrender.com/api/users/user-withdrawals",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
+
+      if (response.data?.status === "success") {
+        setWithdrawals(response.data.data ?? []);
+      } else {
+        setError("Unexpected response from server.");
       }
+    } catch (err) {
+      const error = err as AxiosError<any>;
 
-      try {
-        setLoading(true);
-        setError(null);
+      console.error("FULL AXIOS ERROR:", error);
 
-        // Get user token
-        const token = localStorage.getItem("token");
+      if (error.response) {
+        console.error("STATUS:", error.response.status);
+        console.error("DATA:", error.response.data);
 
-        if (!token) {
-          setError("Session expired. Please login again.");
-          setLoading(false);
-          setTimeout(() => {
-            router.push("/login");
-          }, 1500);
-          return;
-        }
-
-        console.log(
-          "Fetching withdrawals with token:",
-          token.substring(0, 20) + "..."
-        );
-
-        // Fetch only the authenticated user's withdrawals using axios
-        const response = await axios.get(
-          "https://top-mart-api.onrender.com/api/users/user-withdrawals",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            withCredentials: true,
-          }
-        );
-
-        console.log("Withdrawal API Response:", response.data);
-
-        // Backend returns: { status: "success", data: [...] }
-        if (response.data.status === "success") {
-          const withdrawalsData = response.data.data || [];
-          console.log("Withdrawals received:", withdrawalsData.length);
-          setWithdrawals(withdrawalsData);
-        } else {
-          console.error("Unexpected response format:", response.data);
-          setError("Unexpected response format from server");
-        }
-      } catch (err: any) {
-        console.error("Error fetching user withdrawals:", err);
-
-        // Handle axios errors
-        if (err.response) {
-          // Server responded with error status
-          console.error("Server error status:", err.response.status);
-          console.error("Server error data:", err.response.data);
-
-          if (err.response.status === 401) {
-            setError("Session expired. Please login again.");
-            // Clear token on 401
-            localStorage.removeItem("token");
-            setTimeout(() => {
-              router.push("/login");
-            }, 1500);
-          } else if (err.response.status === 500) {
-            const serverMessage =
-              err.response.data?.message ||
-              err.response.data?.error ||
-              "Internal server error";
-            setError(`Server error: ${serverMessage}`);
-            console.error("Full server error:", err.response.data);
-          } else if (err.response.status === 404) {
-            setError(
-              "Withdrawal endpoint not found. Please check the API route."
-            );
-          } else {
-            setError(
-              err.response.data?.message ||
-                err.response.data?.error ||
-                "Failed to load withdrawals"
-            );
-          }
-        } else if (err.request) {
-          // Request made but no response
-          console.error("No response received:", err.request);
-          setError(
-            "Network error. Please check your connection and try again."
-          );
-        } else {
-          // Other errors
-          console.error("Error:", err.message);
-          setError(err.message || "Failed to load withdrawals");
-        }
-      } finally {
-        setLoading(false);
+        setError(JSON.stringify(error.response.data, null, 2));
+      } else if (error.request) {
+        setError("No response from server. API may be down.");
+      } else {
+        setError(error.message);
       }
-    };
-
-    fetchUserWithdrawals();
+    } finally {
+      setLoading(false);
+    }
   }, [isAuthenticated, router]);
 
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchUserWithdrawals();
+  }, [isAuthenticated, fetchUserWithdrawals]);
+
+  const safe = (value?: string) => value?.toLowerCase() ?? "";
+  const query = searchTerm.toLowerCase();
+
   const filteredWithdrawals = withdrawals.filter(
-    (withdrawal) =>
-      withdrawal.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      withdrawal.bankName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      withdrawal.accountNumber
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      withdrawal.accountName.toLowerCase().includes(searchTerm.toLowerCase())
+    (w) =>
+      safe(w.reference).includes(query) ||
+      safe(w.bankName).includes(query) ||
+      safe(w.accountNumber).includes(query) ||
+      safe(w.accountName).includes(query)
   );
 
   const getStatusColor = (status: string) => {
@@ -163,11 +119,6 @@ export default function WithdrawalRecordsPage() {
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    // Capitalize status
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
-
   const totalWithdrawals = withdrawals.length;
   const totalAmount = withdrawals
     .filter((w) => w.status === "success")
@@ -176,26 +127,39 @@ export default function WithdrawalRecordsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-4">
-        <div className="max-w-md mx-auto flex items-center gap-3">
-          <Link href="/profile">
-            <Button variant="ghost" size="icon">
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
-          </Link>
-          <h1 className="text-xl font-semibold">Withdrawal Records</h1>
-        </div>
-      </div>
+      {/* Header */}
+      <motion.div
+        initial={{ y: -6, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="bg-[#e81d78] text-white px-5 py-5 flex items-center justify-between"
+      >
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.05 }}
+          className="p-2 -ml-2 hover:bg-pink-600 rounded"
+          onClick={() => router.push("/home")}
+        >
+          <ChevronLeft size={24} />
+        </motion.button>
+        <h1 className="text-xl font-bold flex-1 text-center">
+          Withdrawal Records
+        </h1>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          className="text-sm font-medium px-4 py-2 hover:bg-pink-600 rounded"
+        >
+          Records
+        </motion.button>
+      </motion.div>
 
       <div className="max-w-md mx-auto px-4 py-6">
-        {/* Loading State */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-12">
+          <div className="flex flex-col items-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-purple-600 mb-3" />
             <p className="text-gray-600">Loading withdrawals...</p>
           </div>
         ) : error ? (
-          /* Error State */
           <Card className="p-8 text-center border-red-200 bg-red-50">
             <p className="text-red-600 font-medium mb-2">
               Error Loading Withdrawals
@@ -203,103 +167,81 @@ export default function WithdrawalRecordsPage() {
             <p className="text-sm text-red-500 mb-4 whitespace-pre-wrap">
               {error}
             </p>
-            <div className="flex gap-2 justify-center">
+            <div className="flex justify-center gap-2">
               <Button
-                onClick={() => window.location.reload()}
                 variant="outline"
-                className="border-red-300 text-red-600 hover:bg-red-100"
+                onClick={() => window.location.reload()}
               >
                 Try Again
               </Button>
-              <Button
-                onClick={() => router.push("/profile")}
-                variant="outline"
-                className="border-gray-300 text-gray-600 hover:bg-gray-100"
-              >
+              <Button variant="outline" onClick={() => router.push("/profile")}>
                 Go Back
               </Button>
             </div>
           </Card>
         ) : (
           <>
-            {/* Summary Cards */}
+            {/* Summary */}
             <div className="grid grid-cols-2 gap-3 mb-6">
-              <Card className="p-4 bg-purple-50 border-purple-200">
-                <div className="text-sm text-gray-600 mb-1">
-                  Total Withdrawals
-                </div>
-                <div className="text-2xl font-bold text-purple-600">
+              <Card className="p-4 bg-purple-50">
+                <p className="text-sm text-gray-600">Total Withdrawals</p>
+                <p className="text-2xl font-bold text-purple-600">
                   {totalWithdrawals}
-                </div>
+                </p>
               </Card>
-              <Card className="p-4 bg-red-50 border-red-200">
-                <div className="text-sm text-gray-600 mb-1">Total Amount</div>
-                <div className="text-xl font-bold text-red-600">
+              <Card className="p-4 bg-red-50">
+                <p className="text-sm text-gray-600">Total Amount</p>
+                <p className="text-xl font-bold text-red-600">
                   ₦{totalAmount.toLocaleString()}
-                </div>
+                </p>
               </Card>
             </div>
 
             {/* Search */}
-            <div className="mb-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <Input
-                  placeholder="Search by reference, bank, or account..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
+            <div className="mb-6 relative">
+              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <Input
+                className="pl-10"
+                placeholder="Search withdrawals..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
 
-            {/* Records List */}
+            {/* Records */}
             <div className="space-y-3">
               {filteredWithdrawals.length > 0 ? (
-                filteredWithdrawals.map((withdrawal) => (
-                  <Card
-                    key={withdrawal.id}
-                    className="p-4 border border-gray-200 hover:border-gray-300 transition-colors"
-                  >
-                    <div className="flex items-start justify-between mb-3">
+                filteredWithdrawals.map((w) => (
+                  <Card key={w.id} className="p-4">
+                    <div className="flex justify-between mb-3">
                       <div>
-                        <h3 className="font-semibold text-gray-900">
-                          {withdrawal.reference}
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {withdrawal.bankName}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {withdrawal.accountName} • {withdrawal.accountNumber}
+                        <p className="font-semibold">{w.reference}</p>
+                        <p className="text-sm text-gray-500">{w.bankName}</p>
+                        <p className="text-xs text-gray-400">
+                          {w.accountName} • {w.accountNumber}
                         </p>
                       </div>
-                      <Badge className={getStatusColor(withdrawal.status)}>
-                        {getStatusLabel(withdrawal.status)}
+                      <Badge className={getStatusColor(w.status)}>
+                        {w.status.toUpperCase()}
                       </Badge>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex justify-between">
                       <span className="text-sm text-gray-600">
-                        {withdrawal.date}
+                        {formatDate(w.date)}
                       </span>
-                      <span className="text-lg font-bold text-red-600">
-                        -₦{withdrawal.amount.toLocaleString()}
+                      <span className="font-bold text-red-600">
+                        -₦{w.amount.toLocaleString()}
                       </span>
                     </div>
                   </Card>
                 ))
               ) : (
-                <Card className="p-8 text-center border-gray-200">
+                <Card className="p-8 text-center">
                   <p className="text-gray-500">
                     {searchTerm
-                      ? "No matching withdrawals found"
-                      : "No withdrawals yet"}
+                      ? "No matching withdrawals found."
+                      : "No withdrawals yet."}
                   </p>
-                  {!searchTerm && (
-                    <p className="text-sm text-gray-400 mt-2">
-                      Your withdrawal history will appear here once you make a
-                      withdrawal
-                    </p>
-                  )}
                 </Card>
               )}
             </div>
