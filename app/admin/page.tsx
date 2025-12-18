@@ -1,7 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Eye, Search, Bell, LogOut, Menu, X } from "lucide-react";
+import {
+  Eye,
+  Search,
+  Bell,
+  LogOut,
+  Menu,
+  X,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ApprovalModal from "@/components/approval-modal";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,8 +36,9 @@ interface DepositRequest {
   email: string;
   amount: number;
   paymentProof: string;
-  status: "pending" | "proof-submitted" | "approved" | "rejected"; // ✅ Added proof-submitted
+  status: "pending" | "approved" | "rejected"; // ✅ Removed "proof-submitted"
   submittedDate: string;
+  hasProof: boolean; // ✅ New field to track if proof exists
   proof?: {
     senderName?: string;
     originalName?: string;
@@ -51,9 +61,7 @@ export default function AdminDashboard() {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<
-    "all" | "pending" | "proof-submitted" | "approved" | "rejected"
-  >("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adminUser, setAdminUser] = useState<{
@@ -64,11 +72,11 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState<PageView>("deposits");
 
-  // Calculate stats from current requests
   const approvedCount = requests.filter((r) => r.status === "approved").length;
   const rejectedCount = requests.filter((r) => r.status === "rejected").length;
-  const pendingCount = requests.filter(
-    (r) => r.status === "pending" || r.status === "proof-submitted"
+  const pendingCount = requests.filter((r) => r.status === "pending").length;
+  const pendingWithProofCount = requests.filter(
+    (r) => r.status === "pending" && r.hasProof
   ).length;
   const totalApprovedAmount = requests
     .filter((r) => r.status === "approved")
@@ -112,6 +120,8 @@ export default function AdminDashboard() {
         const user = p.userId ?? p.user ?? {};
         const created = p.createdAt ?? p.submittedAt ?? p.date ?? p.created;
         const proof = p.proof ?? {};
+        const proofUrl =
+          proof.url ?? p.paymentProof ?? p.proofUrl ?? p.receiptUrl ?? "";
 
         return {
           id: String(p._id ?? p.id ?? ""),
@@ -123,16 +133,16 @@ export default function AdminDashboard() {
               "Unknown"),
           email: user?.email ?? p.email ?? "",
           amount: Number(p.amount ?? p.investmentAmount ?? p.proofAmount ?? 0),
-          paymentProof:
-            proof.url ?? p.paymentProof ?? p.proofUrl ?? p.receiptUrl ?? "",
-          status: (p.status ?? "pending") as DepositRequest["status"], // ✅ Proper typing
+          paymentProof: proofUrl,
+          hasProof: Boolean(proofUrl), // ✅ Check if proof exists
+          status: (p.status ?? "pending") as DepositRequest["status"],
           submittedDate: created
             ? new Date(created).toLocaleString()
             : p.submittedDate ?? "",
           proof: {
             senderName: proof.senderName ?? p.senderName ?? "",
             originalName: proof.originalName ?? p.originalName ?? "",
-            url: proof.url ?? p.paymentProof ?? p.proofUrl ?? "",
+            url: proofUrl,
           },
         } as DepositRequest;
       });
@@ -181,7 +191,6 @@ export default function AdminDashboard() {
 
   const handleApprove = async (depositId: string) => {
     try {
-      // ✅ Optimistic update first
       setRequests((prev) =>
         prev.map((r) =>
           r.id === depositId ? { ...r, status: "approved" as const } : r
@@ -203,15 +212,11 @@ export default function AdminDashboard() {
         throw new Error(`Approve failed: ${response.status}`);
       }
 
-      // ✅ Success - close modal and optionally refetch
       setSelectedRequest(null);
       setIsModalOpen(false);
-
-      // Optional: Silently refetch in background to ensure sync
       fetchRequests().catch(console.error);
     } catch (err) {
       console.error("[Admin] Approve error:", err);
-      // ✅ Revert optimistic update on error
       await fetchRequests();
       alert("Failed to approve deposit. Please try again.");
     }
@@ -219,7 +224,6 @@ export default function AdminDashboard() {
 
   const handleReject = async (depositId: string, reason: string) => {
     try {
-      // ✅ Optimistic update first
       setRequests((prev) =>
         prev.map((r) =>
           r.id === depositId ? { ...r, status: "rejected" as const } : r
@@ -242,15 +246,11 @@ export default function AdminDashboard() {
         throw new Error(`Reject failed: ${response.status}`);
       }
 
-      // ✅ Success - close modal
       setSelectedRequest(null);
       setIsModalOpen(false);
-
-      // Optional: Silently refetch in background
       fetchRequests().catch(console.error);
     } catch (err) {
       console.error("[Admin] Reject error:", err);
-      // ✅ Revert optimistic update on error
       await fetchRequests();
       alert("Failed to reject deposit. Please try again.");
     }
@@ -399,6 +399,7 @@ export default function AdminDashboard() {
                 approvedCount={approvedCount}
                 rejectedCount={rejectedCount}
                 pendingCount={pendingCount}
+                pendingWithProofCount={pendingWithProofCount}
                 totalApprovedAmount={totalApprovedAmount}
                 setSelectedRequest={setSelectedRequest}
                 setIsModalOpen={setIsModalOpen}
@@ -468,6 +469,7 @@ function DepositsPage({
   approvedCount,
   rejectedCount,
   pendingCount,
+  pendingWithProofCount,
   totalApprovedAmount,
   setSelectedRequest,
   setIsModalOpen,
@@ -495,10 +497,13 @@ function DepositsPage({
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400 opacity-75 mb-2">
-                Pending Approvals
+                Pending Deposits
               </p>
               <p className="text-3xl font-bold text-yellow-700 dark:text-yellow-400">
                 {pendingCount}
+              </p>
+              <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">
+                {pendingWithProofCount} with proof
               </p>
             </div>
             <span className="text-2xl">⏳</span>
@@ -553,9 +558,7 @@ function DepositsPage({
         <span className="text-sm font-medium text-foreground flex items-center gap-2">
           <span>Filter:</span>
         </span>
-        {(
-          ["all", "pending", "proof-submitted", "approved", "rejected"] as const
-        ).map((status) => (
+        {(["all", "pending", "approved", "rejected"] as const).map((status) => (
           <button
             key={status}
             onClick={() => setFilterStatus(status)}
@@ -565,9 +568,7 @@ function DepositsPage({
                 : "bg-muted text-foreground hover:bg-accent"
             }`}
           >
-            {status === "proof-submitted"
-              ? "Proof Submitted"
-              : status.charAt(0).toUpperCase() + status.slice(1)}
+            {status.charAt(0).toUpperCase() + status.slice(1)}
           </button>
         ))}
       </div>
@@ -620,6 +621,9 @@ function DepositsPage({
                     Amount
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                    Proof Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
                     Status
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
@@ -633,7 +637,7 @@ function DepositsPage({
                   {filteredRequests.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={6}
                         className="px-6 py-12 text-center text-muted-foreground"
                       >
                         No requests found with the selected filter.
@@ -679,13 +683,30 @@ function DepositsPage({
                         </td>
 
                         <td className="px-6 py-4">
+                          {r.hasProof ? (
+                            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span className="text-xs font-medium">
+                                Proof Attached
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
+                              <AlertCircle className="w-4 h-4" />
+                              <span className="text-xs font-medium">
+                                No Proof
+                              </span>
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="px-6 py-4">
                           <StatusBadge status={r.status} />
                         </td>
 
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            {(r.status === "pending" ||
-                              r.status === "proof-submitted") && (
+                            {r.status === "pending" && (
                               <Button
                                 size="sm"
                                 onClick={() => {
@@ -697,8 +718,7 @@ function DepositsPage({
                                 Review
                               </Button>
                             )}
-                            {(r.status === "approved" ||
-                              r.status === "rejected") && (
+                            {r.status !== "pending" && (
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -732,11 +752,6 @@ function StatusBadge({ status }: { status: string }) {
       bg: "bg-yellow-50 dark:bg-yellow-950/30",
       text: "text-yellow-700 dark:text-yellow-400",
       label: "Pending",
-    },
-    "proof-submitted": {
-      bg: "bg-blue-50 dark:bg-blue-950/30",
-      text: "text-blue-700 dark:text-blue-400",
-      label: "Proof Submitted",
     },
     approved: {
       bg: "bg-green-50 dark:bg-green-950/30",

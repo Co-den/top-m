@@ -12,8 +12,9 @@ interface DepositRequest {
   email: string;
   amount: number;
   paymentProof: string;
-  status: "pending" | "proof-submitted" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected";
   submittedDate: string;
+  hasProof: boolean;
   proof?: {
     senderName?: string;
     originalName?: string;
@@ -115,7 +116,7 @@ export default function ApprovalModal({
                 </motion.div>
               )}
 
-              {hasProof && request.status === "proof-submitted" && (
+              {hasProof && request.status === "pending" && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -218,8 +219,7 @@ export default function ApprovalModal({
               </div>
 
               {/* Action Section */}
-              {request.status === "pending" ||
-              request.status === "proof-submitted" ? (
+              {request.status === "pending" ? (
                 <>
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
