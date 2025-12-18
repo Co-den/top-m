@@ -27,8 +27,13 @@ interface DepositRequest {
   email: string;
   amount: number;
   paymentProof: string;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "proof-submitted" | "approved" | "rejected"; // ✅ Added proof-submitted
   submittedDate: string;
+  proof?: {
+    senderName?: string;
+    originalName?: string;
+    url?: string;
+  };
 }
 
 type PageView =
@@ -59,9 +64,15 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState<PageView>("deposits");
 
+  // Calculate stats from current requests
   const approvedCount = requests.filter((r) => r.status === "approved").length;
   const rejectedCount = requests.filter((r) => r.status === "rejected").length;
-  const pendingCount = requests.filter((r) => r.status === "pending").length;
+  const pendingCount = requests.filter(
+    (r) => r.status === "pending" || r.status === "proof-submitted"
+  ).length;
+  const totalApprovedAmount = requests
+    .filter((r) => r.status === "approved")
+    .reduce((sum, r) => sum + r.amount, 0);
 
   let filteredRequests =
     filterStatus === "all"
@@ -100,6 +111,8 @@ export default function AdminDashboard() {
       const mapped = (Array.isArray(raw) ? raw : []).map((p: any) => {
         const user = p.userId ?? p.user ?? {};
         const created = p.createdAt ?? p.submittedAt ?? p.date ?? p.created;
+        const proof = p.proof ?? {};
+
         return {
           id: String(p._id ?? p.id ?? ""),
           userId: String(user._id ?? user.id ?? p.userId ?? ""),
@@ -110,21 +123,24 @@ export default function AdminDashboard() {
               "Unknown"),
           email: user?.email ?? p.email ?? "",
           amount: Number(p.amount ?? p.investmentAmount ?? p.proofAmount ?? 0),
-          paymentProof: p.paymentProof ?? p.proofUrl ?? p.receiptUrl ?? "",
-          status: (p.status ?? "pending") as
-            | "pending"
-            | "approved"
-            | "rejected",
+          paymentProof:
+            proof.url ?? p.paymentProof ?? p.proofUrl ?? p.receiptUrl ?? "",
+          status: (p.status ?? "pending") as DepositRequest["status"], // ✅ Proper typing
           submittedDate: created
             ? new Date(created).toLocaleString()
             : p.submittedDate ?? "",
+          proof: {
+            senderName: proof.senderName ?? p.senderName ?? "",
+            originalName: proof.originalName ?? p.originalName ?? "",
+            url: proof.url ?? p.paymentProof ?? p.proofUrl ?? "",
+          },
         } as DepositRequest;
       });
 
       setRequests(mapped);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
-      console.error("[v0] Fetch error:", err);
+      console.error("[Admin] Fetch error:", err);
     } finally {
       setLoading(false);
     }
@@ -158,13 +174,20 @@ export default function AdminDashboard() {
 
       await fetchRequests();
     } catch (err) {
-      console.error("[v0] Auth verification error:", err);
+      console.error("[Admin] Auth verification error:", err);
       fetchRequests();
     }
   };
 
   const handleApprove = async (depositId: string) => {
     try {
+      // ✅ Optimistic update first
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === depositId ? { ...r, status: "approved" as const } : r
+        )
+      );
+
       const response = await fetch(
         `https://top-mart-api.onrender.com/api/approval/${depositId}/approve`,
         {
@@ -174,34 +197,37 @@ export default function AdminDashboard() {
         }
       );
 
-      const bodyText = await response.text().catch(() => "");
       if (!response.ok) {
-        console.error("[v0] Approve failed:", response.status, bodyText);
+        const bodyText = await response.text().catch(() => "");
+        console.error("[Admin] Approve failed:", response.status, bodyText);
         throw new Error(`Approve failed: ${response.status}`);
       }
 
-      setRequests((prev) =>
-        prev.map((r) => (r.id === depositId ? { ...r, status: "approved" } : r))
-      );
-      setFilterStatus("all");
+      // ✅ Success - close modal and optionally refetch
       setSelectedRequest(null);
       setIsModalOpen(false);
 
-      await fetchRequests();
+      // Optional: Silently refetch in background to ensure sync
+      fetchRequests().catch(console.error);
     } catch (err) {
-      console.error("[v0] Approve error:", err);
-      setRequests((prev) =>
-        prev.map((r) => (r.id === depositId ? { ...r, status: "approved" } : r))
-      );
-      setSelectedRequest(null);
-      setIsModalOpen(false);
+      console.error("[Admin] Approve error:", err);
+      // ✅ Revert optimistic update on error
+      await fetchRequests();
+      alert("Failed to approve deposit. Please try again.");
     }
   };
 
   const handleReject = async (depositId: string, reason: string) => {
     try {
+      // ✅ Optimistic update first
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === depositId ? { ...r, status: "rejected" as const } : r
+        )
+      );
+
       const response = await fetch(
-        `https://top-mart-api.onrender.com/api/deposit/${depositId}/reject`,
+        `https://top-mart-api.onrender.com/api/deposits/${depositId}/reject`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -210,23 +236,23 @@ export default function AdminDashboard() {
         }
       );
 
-      const bodyText = await response.text().catch(() => "");
       if (!response.ok) {
-        console.error("[v0] Reject failed:", response.status, bodyText);
+        const bodyText = await response.text().catch(() => "");
+        console.error("[Admin] Reject failed:", response.status, bodyText);
         throw new Error(`Reject failed: ${response.status}`);
       }
 
-      setRequests((prev) =>
-        prev.map((r) => (r.id === depositId ? { ...r, status: "rejected" } : r))
-      );
+      // ✅ Success - close modal
+      setSelectedRequest(null);
       setIsModalOpen(false);
-      await fetchRequests();
+
+      // Optional: Silently refetch in background
+      fetchRequests().catch(console.error);
     } catch (err) {
-      console.error("[v0] Reject error:", err);
-      setRequests((prev) =>
-        prev.map((r) => (r.id === depositId ? { ...r, status: "rejected" } : r))
-      );
-      setIsModalOpen(false);
+      console.error("[Admin] Reject error:", err);
+      // ✅ Revert optimistic update on error
+      await fetchRequests();
+      alert("Failed to reject deposit. Please try again.");
     }
   };
 
@@ -238,7 +264,7 @@ export default function AdminDashboard() {
         credentials: "include",
       });
     } catch (err) {
-      console.error("[v0] Logout error:", err);
+      console.error("[Admin] Logout error:", err);
     } finally {
       window.location.href = "/admin-auth";
     }
@@ -373,6 +399,7 @@ export default function AdminDashboard() {
                 approvedCount={approvedCount}
                 rejectedCount={rejectedCount}
                 pendingCount={pendingCount}
+                totalApprovedAmount={totalApprovedAmount}
                 setSelectedRequest={setSelectedRequest}
                 setIsModalOpen={setIsModalOpen}
               />
@@ -441,6 +468,7 @@ function DepositsPage({
   approvedCount,
   rejectedCount,
   pendingCount,
+  totalApprovedAmount,
   setSelectedRequest,
   setIsModalOpen,
 }: any) {
@@ -457,7 +485,7 @@ function DepositsPage({
           Deposits Management
         </h1>
         <p className="text-muted-foreground">
-          Manage and approve user deposits applications
+          Manage and approve user deposit applications
         </p>
       </div>
 
@@ -481,7 +509,7 @@ function DepositsPage({
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-green-700 dark:text-green-400 opacity-75 mb-2">
-                Approved Plans
+                Approved Deposits
               </p>
               <p className="text-3xl font-bold text-green-700 dark:text-green-400">
                 {approvedCount}
@@ -495,7 +523,7 @@ function DepositsPage({
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-red-700 dark:text-red-400 opacity-75 mb-2">
-                Rejected Plans
+                Rejected Deposits
               </p>
               <p className="text-3xl font-bold text-red-700 dark:text-red-400">
                 {rejectedCount}
@@ -509,17 +537,10 @@ function DepositsPage({
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-blue-700 dark:text-blue-400 opacity-75 mb-2">
-                Total Invested
+                Total Approved
               </p>
               <p className="text-3xl font-bold text-blue-700 dark:text-blue-400">
-                ₦
-                {requests
-                  .reduce(
-                    (sum: number, r: any) =>
-                      r.status === "approved" ? sum + r.amount : sum,
-                    0
-                  )
-                  .toLocaleString()}
+                ₦{totalApprovedAmount.toLocaleString()}
               </p>
             </div>
             <span className="text-2xl">💰</span>
@@ -596,7 +617,7 @@ function DepositsPage({
                     Email
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
-                    Role
+                    Amount
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
                     Status
@@ -641,7 +662,7 @@ function DepositsPage({
                                 {r.userName}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                @{r.userName.toLowerCase().replace(/\s+/g, "")}
+                                ID: {r.id.slice(0, 8)}...
                               </p>
                             </div>
                           </div>
@@ -652,8 +673,8 @@ function DepositsPage({
                         </td>
 
                         <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                            {r.plan}
+                          <span className="font-semibold text-foreground">
+                            ₦{r.amount.toLocaleString()}
                           </span>
                         </td>
 
@@ -663,7 +684,8 @@ function DepositsPage({
 
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            {r.status === "pending" && (
+                            {(r.status === "pending" ||
+                              r.status === "proof-submitted") && (
                               <Button
                                 size="sm"
                                 onClick={() => {
@@ -675,7 +697,8 @@ function DepositsPage({
                                 Review
                               </Button>
                             )}
-                            {r.status !== "pending" && (
+                            {(r.status === "approved" ||
+                              r.status === "rejected") && (
                               <Button
                                 size="sm"
                                 variant="ghost"
