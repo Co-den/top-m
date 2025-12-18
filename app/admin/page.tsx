@@ -46,7 +46,7 @@ export default function AdminDashboard() {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
- const [filterStatus, setFilterStatus] = useState<
+  const [filterStatus, setFilterStatus] = useState<
     "all" | "pending" | "proof-submitted" | "approved" | "rejected"
   >("all");
   const [loading, setLoading] = useState(true);
