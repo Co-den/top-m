@@ -31,7 +31,7 @@ export default function ApprovalModal({ isOpen, request, onApprove, onReject, on
 
   const handleApproveClick = async () => {
     setIsApproving(true)
-    await onApprove()
+    onApprove()
     setIsApproving(false)
   }
 
@@ -41,7 +41,7 @@ export default function ApprovalModal({ isOpen, request, onApprove, onReject, on
       return
     }
     setIsRejecting(true)
-    await onReject(rejectionReason)
+    onReject(rejectionReason)
     setIsRejecting(false)
     setRejectionReason("")
   }
