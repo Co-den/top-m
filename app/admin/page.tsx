@@ -25,7 +25,6 @@ interface DepositRequest {
   userId: string;
   userName: string;
   email: string;
-  plan: string;
   amount: number;
   paymentProof: string;
   status: "pending" | "approved" | "rejected";
@@ -110,7 +109,6 @@ export default function AdminDashboard() {
             (`${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() ||
               "Unknown"),
           email: user?.email ?? p.email ?? "",
-          plan: p.plan ?? p.investmentPlan ?? "Unknown",
           amount: Number(p.amount ?? p.investmentAmount ?? p.proofAmount ?? 0),
           paymentProof: p.paymentProof ?? p.proofUrl ?? p.receiptUrl ?? "",
           status: (p.status ?? "pending") as

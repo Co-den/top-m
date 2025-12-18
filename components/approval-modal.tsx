@@ -10,7 +10,6 @@ interface DepositRequest {
   userId: string
   userName: string
   email: string
-  plan: string
   amount: number
   paymentProof: string
   status: "pending" | "approved" | "rejected"
