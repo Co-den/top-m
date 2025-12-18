@@ -70,7 +70,7 @@ export default function PaymentConfirmationPage() {
     try {
       const token = localStorage.getItem("token");
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("proof", file);
       formData.append("senderName", senderName);
 
       await axios.post(

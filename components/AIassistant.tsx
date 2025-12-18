@@ -53,12 +53,14 @@ const AIAssistant = ({
           planData: plan,
         }
       );
-      const text = res.data.answer || "No answer.";
+      const text = res.data.answer || "No answer received.";
       setAnswer(text);
       setHistory((h) => [{ q, a: text, timestamp: Date.now() }, ...h]);
     } catch (err: any) {
-      console.error(err);
-      setError("Sorry — something went wrong. Try again.");
+      console.error("AI request error:", err);
+      const errorMsg =
+        err.response?.data?.error || "Sorry - something went wrong. Try again.";
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -85,8 +87,8 @@ const AIAssistant = ({
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="text-lg sm:text-xl font-semibold text-green-700">
-            Ask AI about this product
+          <h3 className="text-lg sm:text-xl font-semibold text-pink-700">
+            Ask AI about our plans
           </h3>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
             Get instant answers to your questions
@@ -121,9 +123,9 @@ const AIAssistant = ({
           <input
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            placeholder="e.g. Is this suitable for broilers?"
+            placeholder="e.g. Is this suitable on the long-run?"
             aria-label="Ask a question"
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500 transition-all text-sm sm:text-base"
           />
 
           {question && (
@@ -155,7 +157,12 @@ const AIAssistant = ({
             type="submit"
             disabled={loading || !question.trim()}
             aria-busy={loading}
-            className="w-full sm:w-auto bg-green-600 text-white px-6 py-2.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-700 active:scale-95 transition-all duration-200 font-medium text-sm"
+            className={`
+      w-full sm:w-auto bg-pink-600 text-white px-6 py-2.5 rounded-lg shadow-2xl
+      flex items-center justify-center gap-2
+      hover:bg-pink-700 active:scale-95 transition-all duration-200
+      font-medium text-sm
+    `}
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -166,13 +173,14 @@ const AIAssistant = ({
               "Ask AI"
             )}
           </button>
+
           <button
             type="button"
             className={`
-    w-full sm:w-auto px-6 py-2.5 border border-gray-300 rounded-lg
-    hover:bg-gray-50 active:scale-95 transition-all duration-200
-    font-medium text-sm
-  `}
+      w-full sm:w-auto px-6 py-2.5 border border-gray-300 rounded-lg
+      hover:bg-gray-50 active:scale-95 transition-all duration-200
+      font-medium text-sm
+    `}
             onClick={() => {
               setQuestion("");
               setAnswer("");
@@ -191,15 +199,19 @@ const AIAssistant = ({
         </p>
         <div className="flex flex-wrap gap-2">
           {[
-            "Is this product in stock?",
-            "What's the delivery time?",
-            "Is there a discount on bulk orders?",
+            "What is the best plan?",
+            "What's the investment return?",
+            "Is there a discount for new users?",
           ].map((q) => (
             <button
               key={q}
               onClick={() => quickAsk(q)}
               disabled={loading}
-              className="text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`
+    text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-gray-100
+    hover:bg-gray-200 active:scale-95 transition-all duration-200
+    disabled:opacity-50 disabled:cursor-not-allowed
+  `}
             >
               {q}
             </button>
@@ -219,8 +231,8 @@ const AIAssistant = ({
               exit={{ opacity: 0 }}
               className="flex items-center gap-2 text-sm text-gray-500"
             >
-              <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-              AI is typing…
+              <div className="w-4 h-4 border-2 border-pink-600 border-t-transparent rounded-full animate-spin" />
+              AI is typing...
             </motion.div>
           )}
 
@@ -235,7 +247,7 @@ const AIAssistant = ({
             >
               <div className="flex items-start gap-2">
                 <svg
-                  className="w-5 h-5 flex-shrink-0 mt-0.5"
+                  className="w-5 h-5 shrink-0 mt-0.5"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -257,10 +269,10 @@ const AIAssistant = ({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200"
+              className="bg-linear-to-br from-pink-50 to-pink-100 p-4 rounded-lg border border-pink-200"
             >
               <div className="flex items-start gap-2 mb-2">
-                <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 bg-pink-600 rounded-full flex items-center justify-center shrink-0">
                   <svg
                     className="w-4 h-4 text-white"
                     fill="currentColor"
@@ -270,7 +282,7 @@ const AIAssistant = ({
                     <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
                   </svg>
                 </div>
-                <strong className="text-sm font-semibold text-green-700">
+                <strong className="text-sm font-semibold text-pink-700">
                   AI Assistant
                 </strong>
               </div>
