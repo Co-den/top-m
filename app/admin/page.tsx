@@ -46,8 +46,8 @@ export default function AdminDashboard() {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<
-    "all" | "pending" | "approved" | "rejected"
+ const [filterStatus, setFilterStatus] = useState<
+    "all" | "pending" | "proof-submitted" | "approved" | "rejected"
   >("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -129,8 +129,6 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   };
-
-  
 
   const verifyAuthAndFetch = async () => {
     try {
@@ -382,21 +380,13 @@ export default function AdminDashboard() {
             {currentPage === "dashboard" && (
               <PlaceholderPage key="dashboard" title="Dashboard" />
             )}
-            {currentPage === "users" && (
-              <UsersPage key="users" />
-            )}
+            {currentPage === "users" && <UsersPage key="users" />}
             {currentPage === "investments" && (
               <InvestmentsPage key="investments" />
             )}
-            {currentPage === "plans" && (
-              <PlansPage key="plans" />
-            )}
-            {currentPage === "chat" && (
-              <ChatPage key="chat"/>
-            )}
-            {currentPage === "analysis" && (
-              <AnalysisPage key="analysis" />
-            )}
+            {currentPage === "plans" && <PlansPage key="plans" />}
+            {currentPage === "chat" && <ChatPage key="chat" />}
+            {currentPage === "analysis" && <AnalysisPage key="analysis" />}
           </AnimatePresence>
         </main>
       </div>
@@ -542,7 +532,9 @@ function DepositsPage({
         <span className="text-sm font-medium text-foreground flex items-center gap-2">
           <span>Filter:</span>
         </span>
-        {(["all", "pending", "approved", "rejected"] as const).map((status) => (
+        {(
+          ["all", "pending", "proof-submitted", "approved", "rejected"] as const
+        ).map((status) => (
           <button
             key={status}
             onClick={() => setFilterStatus(status)}
@@ -552,7 +544,9 @@ function DepositsPage({
                 : "bg-muted text-foreground hover:bg-accent"
             }`}
           >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
+            {status === "proof-submitted"
+              ? "Proof Submitted"
+              : status.charAt(0).toUpperCase() + status.slice(1)}
           </button>
         ))}
       </div>
@@ -715,6 +709,11 @@ function StatusBadge({ status }: { status: string }) {
       bg: "bg-yellow-50 dark:bg-yellow-950/30",
       text: "text-yellow-700 dark:text-yellow-400",
       label: "Pending",
+    },
+    "proof-submitted": {
+      bg: "bg-blue-50 dark:bg-blue-950/30",
+      text: "text-blue-700 dark:text-blue-400",
+      label: "Proof Submitted",
     },
     approved: {
       bg: "bg-green-50 dark:bg-green-950/30",
