@@ -62,7 +62,8 @@ export default function AdminDashboard() {
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<
-  "all" | "pending" | "approved" | "rejected" >("all");
+    "all" | "pending" | "approved" | "rejected"
+  >("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adminUser, setAdminUser] = useState<{
@@ -72,13 +73,22 @@ export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState<PageView>("deposits");
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const approvedCount = requests.filter((r) => r.status === "approved").length;
   const rejectedCount = requests.filter((r) => r.status === "rejected").length;
   const pendingCount = requests.filter((r) => r.status === "pending").length;
+
+  // Count pending deposits with proof (ready for approval)
   const pendingWithProofCount = requests.filter(
     (r) => r.status === "pending" && r.hasProof
   ).length;
+
+  // Get pending deposits with proof for notifications
+  const pendingWithProof = requests.filter(
+    (r) => r.status === "pending" && r.hasProof
+  );
+
   const totalApprovedAmount = requests
     .filter((r) => r.status === "approved")
     .reduce((sum, r) => sum + r.amount, 0);
@@ -115,10 +125,7 @@ export default function AdminDashboard() {
       }
 
       const json = await response.json().catch(() => null);
-      console.log("Raw API response:", json);
-
       const raw = Array.isArray(json) ? json : json?.data ?? json?.proofs ?? [];
-      console.log("Deposits after extraction:", raw);
 
       const mapped = (Array.isArray(raw) ? raw : []).map((p: any) => {
         const user = p.userId ?? p.user ?? {};
@@ -151,7 +158,6 @@ export default function AdminDashboard() {
         } as DepositRequest;
       });
 
-      console.log("Mapped deposits:", mapped);
       setRequests(mapped);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -219,6 +225,7 @@ export default function AdminDashboard() {
 
       setSelectedRequest(null);
       setIsModalOpen(false);
+      setShowNotifications(false);
       fetchRequests().catch(console.error);
     } catch (err) {
       console.error("[Admin] Approve error:", err);
@@ -253,6 +260,7 @@ export default function AdminDashboard() {
 
       setSelectedRequest(null);
       setIsModalOpen(false);
+      setShowNotifications(false);
       fetchRequests().catch(console.error);
     } catch (err) {
       console.error("[Admin] Reject error:", err);
@@ -277,6 +285,13 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     verifyAuthAndFetch();
+
+    // Auto-refresh every 30 seconds to check for new deposits
+    const interval = setInterval(() => {
+      fetchRequests();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const navItems = [
@@ -426,10 +441,128 @@ export default function AdminDashboard() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
-              </Button>
+              {/* Notification Bell with Dropdown */}
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative"
+                  onClick={() => setShowNotifications(!showNotifications)}
+                >
+                  <Bell className="h-5 w-5" />
+                  {/* Dynamic Badge Count */}
+                  {pendingWithProofCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 bg-destructive rounded-full flex items-center justify-center text-xs font-bold text-white">
+                      {pendingWithProofCount > 9 ? "9+" : pendingWithProofCount}
+                    </span>
+                  )}
+                </Button>
+
+                {/* Notifications Dropdown */}
+                <AnimatePresence>
+                  {showNotifications && (
+                    <>
+                      {/* Backdrop */}
+                      <div
+                        className="fixed inset-0 z-30"
+                        onClick={() => setShowNotifications(false)}
+                      />
+
+                      {/* Dropdown */}
+                      <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute right-0 mt-2 w-80 md:w-96 bg-card border border-border rounded-lg shadow-lg z-40 max-h-96 overflow-hidden flex flex-col"
+                      >
+                        <div className="p-4 border-b border-border">
+                          <h3 className="font-semibold text-foreground">
+                            Pending Approvals
+                          </h3>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {pendingWithProofCount} deposit
+                            {pendingWithProofCount !== 1 ? "s" : ""} awaiting
+                            approval
+                          </p>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto">
+                          {pendingWithProof.length === 0 ? (
+                            <div className="p-8 text-center text-muted-foreground">
+                              <Bell className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                              <p className="text-sm">No pending deposits</p>
+                            </div>
+                          ) : (
+                            <div className="divide-y divide-border">
+                              {pendingWithProof.map((deposit) => (
+                                <div
+                                  key={deposit.id}
+                                  className="p-4 hover:bg-muted/50 transition cursor-pointer"
+                                  onClick={() => {
+                                    setSelectedRequest(deposit);
+                                    setIsModalOpen(true);
+                                    setShowNotifications(false);
+                                  }}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                        <span className="text-sm font-bold text-primary">
+                                          {deposit.userName
+                                            .charAt(0)
+                                            .toUpperCase()}
+                                        </span>
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-foreground text-sm truncate">
+                                          {deposit.userName}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          {deposit.email}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <span className="text-sm font-semibold text-primary">
+                                            ₦{deposit.amount.toLocaleString()}
+                                          </span>
+                                          <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                                            <CheckCircle2 className="w-3 h-3" />
+                                            Proof attached
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-2">
+                                    {deposit.submittedDate}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {pendingWithProof.length > 0 && (
+                          <div className="p-3 border-t border-border">
+                            <Button
+                              variant="ghost"
+                              className="w-full text-sm text-primary hover:text-primary hover:bg-primary/10"
+                              onClick={() => {
+                                setCurrentPage("deposits");
+                                setFilterStatus("pending");
+                                setShowNotifications(false);
+                              }}
+                            >
+                              View All Pending Deposits →
+                            </Button>
+                          </div>
+                        )}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+
               <Button variant="ghost" size="icon" onClick={handleLogout}>
                 <LogOut className="h-5 w-5" />
               </Button>
