@@ -36,9 +36,9 @@ interface DepositRequest {
   email: string;
   amount: number;
   paymentProof: string;
-  status: "pending" | "approved" | "rejected"; // ✅ Removed "proof-submitted"
+  status: "pending" | "approved" | "rejected";
   submittedDate: string;
-  hasProof: boolean; // ✅ New field to track if proof exists
+  hasProof: boolean;
   proof?: {
     senderName?: string;
     originalName?: string;
@@ -61,7 +61,8 @@ export default function AdminDashboard() {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [filterStatus, setFilterStatus] = useState<
+  "all" | "pending" | "approved" | "rejected" >("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adminUser, setAdminUser] = useState<{
@@ -114,7 +115,10 @@ export default function AdminDashboard() {
       }
 
       const json = await response.json().catch(() => null);
+      console.log("Raw API response:", json);
+
       const raw = Array.isArray(json) ? json : json?.data ?? json?.proofs ?? [];
+      console.log("Deposits after extraction:", raw);
 
       const mapped = (Array.isArray(raw) ? raw : []).map((p: any) => {
         const user = p.userId ?? p.user ?? {};
@@ -134,7 +138,7 @@ export default function AdminDashboard() {
           email: user?.email ?? p.email ?? "",
           amount: Number(p.amount ?? p.investmentAmount ?? p.proofAmount ?? 0),
           paymentProof: proofUrl,
-          hasProof: Boolean(proofUrl), // ✅ Check if proof exists
+          hasProof: Boolean(proofUrl),
           status: (p.status ?? "pending") as DepositRequest["status"],
           submittedDate: created
             ? new Date(created).toLocaleString()
@@ -147,6 +151,7 @@ export default function AdminDashboard() {
         } as DepositRequest;
       });
 
+      console.log("Mapped deposits:", mapped);
       setRequests(mapped);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -286,16 +291,50 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-background">
+      {/* Mobile Backdrop */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Sidebar */}
       <motion.aside
         initial={false}
-        animate={{ width: sidebarOpen ? 280 : 0 }}
-        transition={{ duration: 0.3 }}
-        className="hidden md:flex bg-card border-r border-border flex-col overflow-hidden shrink-0"
+        animate={{
+          x: sidebarOpen ? 0 : -280,
+          width: 280,
+        }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className={cn(
+          "bg-card border-r border-border flex-col overflow-hidden shrink-0",
+          "fixed inset-y-0 left-0 z-50",
+          "md:relative md:z-auto",
+          "flex"
+        )}
+        style={{ width: 280 }}
       >
         <div className="p-6 border-b border-border">
-          <h2 className="text-2xl font-bold text-pink-500">TopMart</h2>
-          <p className="text-sm text-muted-foreground">Admin</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-pink-500">TopMart</h2>
+              <p className="text-sm text-muted-foreground">Admin</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(false)}
+              className="md:hidden"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -307,7 +346,12 @@ export default function AdminDashboard() {
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setCurrentPage(item.id)}
+              onClick={() => {
+                setCurrentPage(item.id);
+                if (window.innerWidth < 768) {
+                  setSidebarOpen(false);
+                }
+              }}
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
                 currentPage === item.id
@@ -344,14 +388,23 @@ export default function AdminDashboard() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-card border-b border-border px-6 py-4">
+        <header className="bg-card border-b border-border px-4 md:px-6 py-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="md:hidden"
+                className="md:hidden shrink-0"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="hidden md:flex shrink-0"
               >
                 {sidebarOpen ? (
                   <X className="h-5 w-5" />
@@ -359,19 +412,20 @@ export default function AdminDashboard() {
                   <Menu className="h-5 w-5" />
                 )}
               </Button>
+
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search [CTRL + K]"
+                  placeholder="Search"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 shrink-0">
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
@@ -442,13 +496,15 @@ function PlaceholderPage({ title }: { title: string }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="p-6 space-y-6"
+      className="p-4 md:p-6 space-y-6"
     >
       <div>
-        <h1 className="text-4xl font-bold text-primary mb-2">{title}</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">
+          {title}
+        </h1>
         <p className="text-muted-foreground">This page is under construction</p>
       </div>
-      <div className="bg-card rounded-xl border border-border p-12 text-center">
+      <div className="bg-card rounded-xl border border-border p-8 md:p-12 text-center">
         <div className="text-6xl mb-4">🚧</div>
         <p className="text-lg text-muted-foreground">
           The {title.toLowerCase()} page will be available soon
@@ -480,89 +536,89 @@ function DepositsPage({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="p-6 space-y-6"
+      className="p-4 md:p-6 space-y-6"
     >
       <div>
-        <h1 className="text-4xl font-bold text-pink-500 mb-2">
+        <h1 className="text-3xl md:text-4xl font-bold text-pink-500 mb-2">
           Deposits Management
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground text-sm md:text-base">
           Manage and approve user deposit applications
         </p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded-xl p-6 border border-yellow-200 dark:border-yellow-900/30">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded-xl p-4 md:p-6 border border-yellow-200 dark:border-yellow-900/30">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400 opacity-75 mb-2">
+              <p className="text-xs md:text-sm font-medium text-yellow-700 dark:text-yellow-400 opacity-75 mb-2">
                 Pending Deposits
               </p>
-              <p className="text-3xl font-bold text-yellow-700 dark:text-yellow-400">
+              <p className="text-2xl md:text-3xl font-bold text-yellow-700 dark:text-yellow-400">
                 {pendingCount}
               </p>
               <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">
                 {pendingWithProofCount} with proof
               </p>
             </div>
-            <span className="text-2xl">⏳</span>
+            <span className="text-xl md:text-2xl">⏳</span>
           </div>
         </div>
 
-        <div className="bg-green-50 dark:bg-green-950/30 rounded-xl p-6 border border-green-200 dark:border-green-900/30">
+        <div className="bg-green-50 dark:bg-green-950/30 rounded-xl p-4 md:p-6 border border-green-200 dark:border-green-900/30">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-green-700 dark:text-green-400 opacity-75 mb-2">
+              <p className="text-xs md:text-sm font-medium text-green-700 dark:text-green-400 opacity-75 mb-2">
                 Approved Deposits
               </p>
-              <p className="text-3xl font-bold text-green-700 dark:text-green-400">
+              <p className="text-2xl md:text-3xl font-bold text-green-700 dark:text-green-400">
                 {approvedCount}
               </p>
             </div>
-            <span className="text-2xl">✓</span>
+            <span className="text-xl md:text-2xl">✓</span>
           </div>
         </div>
 
-        <div className="bg-red-50 dark:bg-red-950/30 rounded-xl p-6 border border-red-200 dark:border-red-900/30">
+        <div className="bg-red-50 dark:bg-red-950/30 rounded-xl p-4 md:p-6 border border-red-200 dark:border-red-900/30">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-red-700 dark:text-red-400 opacity-75 mb-2">
+              <p className="text-xs md:text-sm font-medium text-red-700 dark:text-red-400 opacity-75 mb-2">
                 Rejected Deposits
               </p>
-              <p className="text-3xl font-bold text-red-700 dark:text-red-400">
+              <p className="text-2xl md:text-3xl font-bold text-red-700 dark:text-red-400">
                 {rejectedCount}
               </p>
             </div>
-            <span className="text-2xl">✕</span>
+            <span className="text-xl md:text-2xl">✕</span>
           </div>
         </div>
 
-        <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-6 border border-blue-200 dark:border-blue-900/30">
+        <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-4 md:p-6 border border-blue-200 dark:border-blue-900/30">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-blue-700 dark:text-blue-400 opacity-75 mb-2">
+              <p className="text-xs md:text-sm font-medium text-blue-700 dark:text-blue-400 opacity-75 mb-2">
                 Total Approved
               </p>
-              <p className="text-3xl font-bold text-blue-700 dark:text-blue-400">
+              <p className="text-2xl md:text-3xl font-bold text-blue-700 dark:text-blue-400">
                 ₦{totalApprovedAmount.toLocaleString()}
               </p>
             </div>
-            <span className="text-2xl">💰</span>
+            <span className="text-xl md:text-2xl">💰</span>
           </div>
         </div>
       </div>
 
       {/* Filter Buttons */}
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-sm font-medium text-foreground flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 md:gap-3">
+        <span className="text-xs md:text-sm font-medium text-foreground flex items-center gap-2">
           <span>Filter:</span>
         </span>
         {(["all", "pending", "approved", "rejected"] as const).map((status) => (
           <button
             key={status}
             onClick={() => setFilterStatus(status)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+            className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition ${
               filterStatus === status
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-foreground hover:bg-accent"
@@ -593,10 +649,10 @@ function DepositsPage({
             exit={{ opacity: 0, y: -6 }}
             className="bg-destructive/10 border border-destructive/20 rounded-lg p-4"
           >
-            <p className="text-destructive">Error: {error}</p>
+            <p className="text-destructive text-sm">{error}</p>
             <Button
               onClick={fetchRequests}
-              className="mt-2 bg-destructive hover:bg-destructive/90 text-white"
+              className="mt-2 bg-destructive hover:bg-destructive/90 text-white text-sm"
             >
               Retry
             </Button>
@@ -611,22 +667,22 @@ function DepositsPage({
             <table className="w-full">
               <thead className="bg-muted border-b border-border">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                  <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-foreground">
                     User
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                  <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-foreground hidden sm:table-cell">
                     Email
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                  <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-foreground">
                     Amount
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                  <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-foreground hidden lg:table-cell">
                     Proof Status
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                  <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-foreground">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                  <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-foreground">
                     Actions
                   </th>
                 </tr>
@@ -638,7 +694,7 @@ function DepositsPage({
                     <tr>
                       <td
                         colSpan={6}
-                        className="px-6 py-12 text-center text-muted-foreground"
+                        className="px-4 md:px-6 py-8 md:py-12 text-center text-muted-foreground text-sm"
                       >
                         No requests found with the selected filter.
                       </td>
@@ -654,35 +710,37 @@ function DepositsPage({
                         transition={{ delay: idx * 0.03 }}
                         className="hover:bg-muted/50 transition"
                       >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                        <td className="px-4 md:px-6 py-3 md:py-4">
+                          <div className="flex items-center gap-2 md:gap-3">
+                            <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                               <span className="text-xs font-bold text-primary">
                                 {r.userName.charAt(0).toUpperCase()}
                               </span>
                             </div>
-                            <div>
-                              <p className="font-medium text-foreground text-sm">
+                            <div className="min-w-0">
+                              <p className="font-medium text-foreground text-xs md:text-sm truncate">
                                 {r.userName}
                               </p>
-                              <p className="text-xs text-muted-foreground">
-                                ID: {r.id.slice(0, 8)}...
+                              <p className="text-xs text-muted-foreground sm:hidden truncate">
+                                {r.email}
                               </p>
                             </div>
                           </div>
                         </td>
 
-                        <td className="px-6 py-4 text-sm text-foreground">
-                          {r.email}
+                        <td className="px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm text-foreground hidden sm:table-cell">
+                          <span className="truncate block max-w-[200px]">
+                            {r.email}
+                          </span>
                         </td>
 
-                        <td className="px-6 py-4">
-                          <span className="font-semibold text-foreground">
+                        <td className="px-4 md:px-6 py-3 md:py-4">
+                          <span className="font-semibold text-foreground text-xs md:text-sm">
                             ₦{r.amount.toLocaleString()}
                           </span>
                         </td>
 
-                        <td className="px-6 py-4">
+                        <td className="px-4 md:px-6 py-3 md:py-4 hidden lg:table-cell">
                           {r.hasProof ? (
                             <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                               <CheckCircle2 className="w-4 h-4" />
@@ -700,11 +758,11 @@ function DepositsPage({
                           )}
                         </td>
 
-                        <td className="px-6 py-4">
+                        <td className="px-4 md:px-6 py-3 md:py-4">
                           <StatusBadge status={r.status} />
                         </td>
 
-                        <td className="px-6 py-4">
+                        <td className="px-4 md:px-6 py-3 md:py-4">
                           <div className="flex items-center gap-2">
                             {r.status === "pending" && (
                               <Button
@@ -713,7 +771,7 @@ function DepositsPage({
                                   setSelectedRequest(r);
                                   setIsModalOpen(true);
                                 }}
-                                className="bg-primary hover:bg-primary/90 text-primary-foreground h-8 px-3 text-xs"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground h-7 md:h-8 px-2 md:px-3 text-xs"
                               >
                                 Review
                               </Button>
@@ -726,9 +784,9 @@ function DepositsPage({
                                   setSelectedRequest(r);
                                   setIsModalOpen(true);
                                 }}
-                                className="text-muted-foreground h-8"
+                                className="text-muted-foreground h-7 md:h-8"
                               >
-                                <Eye className="w-4 h-4" />
+                                <Eye className="w-3 h-3 md:w-4 md:h-4" />
                               </Button>
                             )}
                           </div>
@@ -770,7 +828,7 @@ function StatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className={`px-3 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}
+      className={`px-2 md:px-3 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}
     >
       {config.label}
     </span>
