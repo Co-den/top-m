@@ -124,15 +124,14 @@ export default function AdminAuthPage() {
           }}
           className="bg-white rounded-lg shadow-lg p-8 md:p-10"
         >
-          {/* Tab Switcher */}
 
-          <motion.p
-            className={`flex-1 text-center py-3 rounded-lg cursor-pointer font-medium select-none ${
+          <motion.h1
+            className={`flex-1 text-center py-3 font-medium select-none ${
               isLogin ? "text-pink-500" : "text-slate-400 hover:text-white"
             }`}
           >
             Login
-          </motion.p>
+          </motion.h1>
 
           {/* Error Message */}
           <AnimatePresence>
