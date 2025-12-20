@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Eye,
   Search,
@@ -56,6 +57,7 @@ type PageView =
   | "analysis";
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [requests, setRequests] = useState<DepositRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<DepositRequest | null>(
     null
@@ -74,17 +76,17 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState<PageView>("deposits");
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   const approvedCount = requests.filter((r) => r.status === "approved").length;
   const rejectedCount = requests.filter((r) => r.status === "rejected").length;
   const pendingCount = requests.filter((r) => r.status === "pending").length;
 
-  // Count pending deposits with proof (ready for approval)
   const pendingWithProofCount = requests.filter(
     (r) => r.status === "pending" && r.hasProof
   ).length;
 
-  // Get pending deposits with proof for notifications
   const pendingWithProof = requests.filter(
     (r) => r.status === "pending" && r.hasProof
   );
@@ -169,6 +171,8 @@ export default function AdminDashboard() {
 
   const verifyAuthAndFetch = async () => {
     try {
+      setIsCheckingAuth(true);
+
       const authResponse = await fetch(
         "https://top-mart-api.onrender.com/api/admin/verify",
         {
@@ -179,7 +183,8 @@ export default function AdminDashboard() {
       );
 
       if (!authResponse.ok) {
-        fetchRequests();
+        console.log("[Admin] Not authenticated, redirecting to login");
+        router.push("/admin-auth");
         return;
       }
 
@@ -191,12 +196,16 @@ export default function AdminDashboard() {
         rawUser?.name ??
         (`${rawUser?.firstName ?? ""} ${rawUser?.lastName ?? ""}`.trim() || "");
       const email = rawUser?.email ?? rawUser?.emailAddress ?? "";
+
       setAdminUser({ fullName, email });
+      setIsAuthenticated(true);
 
       await fetchRequests();
     } catch (err) {
       console.error("[Admin] Auth verification error:", err);
-      fetchRequests();
+      router.push("/admin-auth");
+    } finally {
+      setIsCheckingAuth(false);
     }
   };
 
@@ -279,20 +288,36 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error("[Admin] Logout error:", err);
     } finally {
-      window.location.href = "/admin-auth";
+      router.push("/admin-auth");
     }
   };
 
   useEffect(() => {
     verifyAuthAndFetch();
 
-    // Auto-refresh every 30 seconds to check for new deposits
     const interval = setInterval(() => {
-      fetchRequests();
+      if (isAuthenticated) {
+        fetchRequests();
+      }
     }, 30000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isAuthenticated]);
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="rounded-full h-12 w-12 border-b-2 border-primary animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Verifying authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const navItems = [
     { id: "dashboard" as PageView, label: "Dashboards", icon: LayoutDashboard },
@@ -306,7 +331,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Mobile Backdrop */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -319,7 +343,6 @@ export default function AdminDashboard() {
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
       <motion.aside
         initial={false}
         animate={{
@@ -401,7 +424,6 @@ export default function AdminDashboard() {
         )}
       </motion.aside>
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-card border-b border-border px-4 md:px-6 py-4">
           <div className="flex items-center justify-between gap-4">
@@ -441,7 +463,6 @@ export default function AdminDashboard() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              {/* Notification Bell with Dropdown */}
               <div className="relative">
                 <Button
                   variant="ghost"
@@ -450,7 +471,6 @@ export default function AdminDashboard() {
                   onClick={() => setShowNotifications(!showNotifications)}
                 >
                   <Bell className="h-5 w-5" />
-                  {/* Dynamic Badge Count */}
                   {pendingWithProofCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-5 w-5 bg-destructive rounded-full flex items-center justify-center text-xs font-bold text-white">
                       {pendingWithProofCount > 9 ? "9+" : pendingWithProofCount}
@@ -458,17 +478,14 @@ export default function AdminDashboard() {
                   )}
                 </Button>
 
-                {/* Notifications Dropdown */}
                 <AnimatePresence>
                   {showNotifications && (
                     <>
-                      {/* Backdrop */}
                       <div
                         className="fixed inset-0 z-30"
                         onClick={() => setShowNotifications(false)}
                       />
 
-                      {/* Dropdown */}
                       <motion.div
                         initial={{ opacity: 0, y: -10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -570,7 +587,6 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 overflow-auto">
           <AnimatePresence mode="wait">
             {currentPage === "deposits" && (
@@ -606,7 +622,6 @@ export default function AdminDashboard() {
         </main>
       </div>
 
-      {/* Modal */}
       <AnimatePresence>
         {selectedRequest && (
           <ApprovalModal
@@ -680,7 +695,6 @@ function DepositsPage({
         </p>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded-xl p-4 md:p-6 border border-yellow-200 dark:border-yellow-900/30">
           <div className="flex items-start justify-between">
@@ -742,7 +756,6 @@ function DepositsPage({
         </div>
       </div>
 
-      {/* Filter Buttons */}
       <div className="flex flex-wrap items-center gap-2 md:gap-3">
         <span className="text-xs md:text-sm font-medium text-foreground flex items-center gap-2">
           <span>Filter:</span>
@@ -762,7 +775,6 @@ function DepositsPage({
         ))}
       </div>
 
-      {/* Loading, Error, and Empty States */}
       <AnimatePresence>
         {loading && (
           <motion.div
@@ -793,7 +805,6 @@ function DepositsPage({
         )}
       </AnimatePresence>
 
-      {/* Data Table */}
       {!loading && !error && (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="overflow-x-auto">
