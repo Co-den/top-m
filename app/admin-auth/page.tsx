@@ -125,28 +125,14 @@ export default function AdminAuthPage() {
           className="bg-white rounded-lg shadow-lg p-8 md:p-10"
         >
           {/* Tab Switcher */}
-          <motion.div
-            layout
-            className="flex gap-2 mb-6 p-1 bg-slate-800/50 rounded-lg"
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.14 }}
+
+          <motion.p
+            className={`flex-1 text-center py-3 rounded-lg cursor-pointer font-medium select-none ${
+              isLogin ? "text-white" : "text-slate-400 hover:text-white"
+            }`}
           >
-            <motion.button
-              onClick={() => {
-                setIsLogin(true);
-                setError(null);
-              }}
-              whileTap={{ scale: 0.98 }}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
-                isLogin
-                  ? "bg-pink-500 text-white"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              Login
-            </motion.button>
-          </motion.div>
+            Login
+          </motion.p>
 
           {/* Error Message */}
           <AnimatePresence>
