@@ -128,7 +128,7 @@ export default function AdminAuthPage() {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-3xl font-bold text-black mb-2"
+            className="text-3xl text-center font-bold text-black mb-2"
           >
             Login
           </motion.h1>
