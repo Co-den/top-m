@@ -128,7 +128,7 @@ export default function AdminAuthPage() {
 
           <motion.p
             className={`flex-1 text-center py-3 rounded-lg cursor-pointer font-medium select-none ${
-              isLogin ? "text-white" : "text-slate-400 hover:text-white"
+              isLogin ? "text-pink-500" : "text-slate-400 hover:text-white"
             }`}
           >
             Login
@@ -190,7 +190,7 @@ export default function AdminAuthPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.18 }}
               >
-                <label className="block text-sm font-medium text-black mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Password
                 </label>
                 <div className="relative">
