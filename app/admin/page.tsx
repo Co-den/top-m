@@ -29,6 +29,11 @@ import ChatPage from "../chat/page";
 import PlansPage from "../plans/page";
 import InvestmentsPage from "../investments/page";
 import UsersPage from "../users/page";
+import {
+  FraudRiskBadge,
+  FraudRiskDot,
+} from "@/components/fraudIndicator";
+import FraudStatsWidget from "@/components/fraudStatsWidget";
 
 interface DepositRequest {
   id: string;
@@ -44,6 +49,18 @@ interface DepositRequest {
     senderName?: string;
     originalName?: string;
     url?: string;
+  };
+  // FRAUD ANALYSIS INTERFACE
+  fraudAnalysis?: {
+    riskScore: number;
+    riskLevel: "LOW" | "MEDIUM" | "HIGH";
+    flags: Array<{
+      type: string;
+      severity: string;
+      message: string;
+    }>;
+    recommendation: string;
+    analyzedAt?: string;
   };
 }
 
@@ -157,6 +174,16 @@ export default function AdminDashboard() {
             originalName: proof.originalName ?? p.originalName ?? "",
             url: proofUrl,
           },
+          // ✅ MAP FRAUD ANALYSIS DATA
+          fraudAnalysis: p.fraudAnalysis
+            ? {
+                riskScore: p.fraudAnalysis.riskScore || 0,
+                riskLevel: p.fraudAnalysis.riskLevel || "LOW",
+                flags: p.fraudAnalysis.flags || [],
+                recommendation: p.fraudAnalysis.recommendation || "APPROVE",
+                analyzedAt: p.fraudAnalysis.analyzedAt,
+              }
+            : undefined,
         } as DepositRequest;
       });
 
@@ -532,9 +559,19 @@ export default function AdminDashboard() {
                                         </span>
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-foreground text-sm truncate">
-                                          {deposit.userName}
-                                        </p>
+                                        {/*FRAUD DOT IN NOTIFICATION */}
+                                        <div className="flex items-center gap-2">
+                                          <p className="font-medium text-foreground text-sm truncate">
+                                            {deposit.userName}
+                                          </p>
+                                          {deposit.fraudAnalysis && (
+                                            <FraudRiskDot
+                                              riskLevel={
+                                                deposit.fraudAnalysis.riskLevel
+                                              }
+                                            />
+                                          )}
+                                        </div>
                                         <p className="text-xs text-muted-foreground truncate">
                                           {deposit.email}
                                         </p>
@@ -754,6 +791,7 @@ function DepositsPage({
             <span className="text-xl md:text-2xl">💰</span>
           </div>
         </div>
+        <FraudStatsWidget />
       </div>
 
       <div className="flex flex-wrap items-center gap-2 md:gap-3">
@@ -861,10 +899,18 @@ function DepositsPage({
                                 {r.userName.charAt(0).toUpperCase()}
                               </span>
                             </div>
-                            <div className="min-w-0">
-                              <p className="font-medium text-foreground text-xs md:text-sm truncate">
-                                {r.userName}
-                              </p>
+                            <div className="min-w-0 flex-1">
+                              {/* ✅ ADD FRAUD BADGE IN TABLE */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-medium text-foreground text-xs md:text-sm truncate">
+                                  {r.userName}
+                                </p>
+                                {r.fraudAnalysis && (
+                                  <FraudRiskBadge
+                                    riskLevel={r.fraudAnalysis.riskLevel}
+                                  />
+                                )}
+                              </div>
                               <p className="text-xs text-muted-foreground sm:hidden truncate">
                                 {r.email}
                               </p>

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { X, AlertCircle, CheckCircle2 } from "lucide-react";
+import { X, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
+import { FraudRiskIndicator } from "./fraudIndicator";
 
 interface DepositRequest {
   id: string;
@@ -18,6 +19,18 @@ interface DepositRequest {
   proof?: {
     senderName?: string;
     originalName?: string;
+  };
+  // ✅ ADD FRAUD ANALYSIS
+  fraudAnalysis?: {
+    riskScore: number;
+    riskLevel: "LOW" | "MEDIUM" | "HIGH";
+    flags: Array<{
+      type: string;
+      severity: string;
+      message: string;
+    }>;
+    recommendation: string;
+    analyzedAt?: string;
   };
 }
 
@@ -42,11 +55,24 @@ export default function ApprovalModal({
 
   // Check if proof exists
   const hasProof = Boolean(request.paymentProof && request.paymentProof.trim());
-  const canApprove = hasProof && request.status !== "approved";
+
+  // ✅ CHECK FRAUD ANALYSIS
+  const fraudRecommendation = request.fraudAnalysis?.recommendation;
+  const isHighRisk = request.fraudAnalysis?.riskLevel === "HIGH";
+  const shouldBlockApproval = fraudRecommendation === "REJECT";
+
+  const canApprove =
+    hasProof && request.status !== "approved" && !shouldBlockApproval;
 
   const handleApproveClick = async () => {
     if (!hasProof) {
       alert("Cannot approve deposit without payment proof");
+      return;
+    }
+    if (shouldBlockApproval) {
+      alert(
+        "⚠️ This deposit is flagged as HIGH RISK and requires manual review before approval. Please verify all details carefully."
+      );
       return;
     }
     setIsApproving(true);
@@ -96,6 +122,26 @@ export default function ApprovalModal({
             </div>
 
             <div className="space-y-6">
+              {/* ✅ HIGH RISK WARNING (Priority Alert) */}
+              {isHighRisk && request.status === "pending" && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-start gap-3 p-4 bg-red-500/10 border-2 border-red-500/50 rounded-lg"
+                >
+                  <AlertTriangle className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-red-500 font-bold text-base">
+                      ⚠️ HIGH RISK DEPOSIT DETECTED
+                    </p>
+                    <p className="text-red-400 text-sm mt-1">
+                      This deposit has been flagged by our fraud detection
+                      system. Please review carefully before taking any action.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
               {/* Proof Status Alert */}
               {!hasProof && request.status === "pending" && (
                 <motion.div
@@ -116,7 +162,7 @@ export default function ApprovalModal({
                 </motion.div>
               )}
 
-              {hasProof && request.status === "pending" && (
+              {hasProof && request.status === "pending" && !isHighRisk && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -174,6 +220,31 @@ export default function ApprovalModal({
                 </div>
               </div>
 
+              {/* ✅ FRAUD ANALYSIS SECTION */}
+              {request.fraudAnalysis && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                      <span className="text-white text-lg">🔍</span>
+                    </div>
+                    <h3 className="text-white font-bold text-lg">
+                      Fraud Analysis
+                    </h3>
+                  </div>
+                  <FraudRiskIndicator analysis={request.fraudAnalysis} />
+
+                  {/* Additional warning for medium risk */}
+                  {request.fraudAnalysis.riskLevel === "MEDIUM" && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                      <p className="text-yellow-400 text-sm">
+                        ⚠️ This deposit shows moderate risk indicators. Please
+                        verify all details before approving.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Payment Proof Section */}
               <div>
                 <p className="text-slate-400 text-sm mb-3 font-semibold">
@@ -223,12 +294,21 @@ export default function ApprovalModal({
                 <>
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
-                      Rejection Reason (optional)
+                      Rejection Reason{" "}
+                      {isHighRisk && (
+                        <span className="text-red-400">
+                          (Recommended for high-risk deposits)
+                        </span>
+                      )}
                     </label>
                     <textarea
                       value={rejectionReason}
                       onChange={(e) => setRejectionReason(e.target.value)}
-                      placeholder="Provide a reason if rejecting this deposit..."
+                      placeholder={
+                        isHighRisk
+                          ? "Provide a reason for rejection (e.g., suspicious activity, duplicate proof, etc.)..."
+                          : "Provide a reason if rejecting this deposit..."
+                      }
                       className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 resize-none"
                       rows={4}
                     />
@@ -239,19 +319,32 @@ export default function ApprovalModal({
                       onClick={handleApproveClick}
                       disabled={!canApprove || isApproving}
                       className={`flex-1 ${
-                        canApprove
+                        shouldBlockApproval
+                          ? "bg-red-600/20 border-2 border-red-500/50 cursor-not-allowed"
+                          : canApprove
                           ? "bg-emerald-500 hover:bg-emerald-600"
                           : "bg-slate-700 cursor-not-allowed"
-                      } text-white transition-all`}
+                      } text-white transition-all relative group`}
                       title={
-                        !hasProof ? "Cannot approve without payment proof" : ""
+                        shouldBlockApproval
+                          ? "High risk deposit - manual review required"
+                          : !hasProof
+                          ? "Cannot approve without payment proof"
+                          : ""
                       }
                     >
-                      {isApproving
-                        ? "Approving..."
-                        : canApprove
-                        ? "Approve Deposit"
-                        : "Proof Required"}
+                      {isApproving ? (
+                        "Approving..."
+                      ) : shouldBlockApproval ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <AlertTriangle className="w-4 h-4" />
+                          High Risk - Manual Review Required
+                        </span>
+                      ) : canApprove ? (
+                        "Approve Deposit"
+                      ) : (
+                        "Proof Required"
+                      )}
                     </Button>
                     <Button
                       onClick={handleRejectClick}
@@ -262,12 +355,26 @@ export default function ApprovalModal({
                     </Button>
                   </div>
 
-                  {!canApprove && (
+                  {/* Info message based on state */}
+                  {shouldBlockApproval ? (
+                    <div className="text-center p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                      <p className="text-sm text-red-400 flex items-center justify-center gap-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        This deposit requires thorough manual verification
+                        before approval
+                      </p>
+                    </div>
+                  ) : !canApprove && hasProof ? (
+                    <p className="text-center text-sm text-slate-400">
+                      <AlertCircle className="w-4 h-4 inline mr-1" />
+                      This deposit has already been processed
+                    </p>
+                  ) : !canApprove ? (
                     <p className="text-center text-sm text-slate-400">
                       <AlertCircle className="w-4 h-4 inline mr-1" />
                       Approval requires valid payment proof from the user
                     </p>
-                  )}
+                  ) : null}
                 </>
               ) : (
                 <div className="text-center py-6 bg-slate-800/50 rounded-lg border border-slate-700">
