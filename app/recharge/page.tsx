@@ -7,6 +7,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import SmartAmountSuggestions from "@/components/smartAmountSuggestions";
 
 const PRESET_AMOUNTS = [
   3000, 6000, 10000, 15000, 30000, 50000, 100000, 200000, 300000, 500000,
@@ -85,6 +86,14 @@ export default function RechargePage() {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto px-4 py-6">
         <div className="max-w-md mx-auto">
+          {/* ✅ ADD SMART SUGGESTIONS HERE - BEFORE "Select Amount" */}
+          <SmartAmountSuggestions
+            onSelect={(amount) => {
+              setSelectedAmount(amount);
+              setCustomAmount(amount.toString());
+            }}
+          />
+
           {/* Select Amount Section */}
           <motion.div
             layout
