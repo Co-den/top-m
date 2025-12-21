@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import PackageCard from "@/components/package-card";
 import { apiRequest } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
-import { getPlanSuggestion } from "@/utils/germinipage";
 //import FloatingAIButton from "@/components/floating-button";
 
 
@@ -25,17 +24,13 @@ interface Plan {
 export default function MainHomePage() {
   const router = useRouter();
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [aiSuggestions, setAiSuggestions] = useState<Record<string, string>>(
-    {}
-  );
-  const [loadingSuggestions, setLoadingSuggestions] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
     let isMounted = true;
 
-    const fetchPlansAndSuggestions = async () => {
+    const fetchPlans = async () => {
       if (!isMounted) return;
 
       setIsLoading(true);
@@ -59,12 +54,6 @@ export default function MainHomePage() {
           : [];
         setPlans(fetchedPlans);
         setIsLoading(false);
-
-        if (fetchedPlans.length > 0 && isMounted) {
-          fetchAISuggestions(fetchedPlans).catch((err) => {
-            console.error("AI suggestions failed:", err);
-          });
-        }
       } catch (err: any) {
         console.error("Failed to load plans:", err);
         if (isMounted) {
@@ -75,7 +64,7 @@ export default function MainHomePage() {
       }
     };
 
-    fetchPlansAndSuggestions().catch((err) => {
+    fetchPlans().catch((err) => {
       console.error("Unhandled error:", err);
       if (isMounted) {
         setError("An unexpected error occurred");
@@ -87,43 +76,6 @@ export default function MainHomePage() {
       isMounted = false;
     };
   }, []);
-
-  const fetchAISuggestions = async (plansList: Plan[]): Promise<void> => {
-    setLoadingSuggestions(true);
-
-    try {
-      const initialSuggestions: Record<string, string> = {};
-      plansList.forEach((plan) => {
-        initialSuggestions[plan._id] = "Loading...";
-      });
-      setAiSuggestions(initialSuggestions);
-
-      for (const plan of plansList) {
-        try {
-          const suggestionText = await getPlanSuggestion(plan.name).catch(
-            () => {
-              return "AI suggestion unavailable";
-            }
-          );
-
-          setAiSuggestions((prev) => ({
-            ...prev,
-            [plan._id]: suggestionText || "AI suggestion unavailable",
-          }));
-        } catch (error: any) {
-          console.error("Error:", error);
-          setAiSuggestions((prev) => ({
-            ...prev,
-            [plan._id]: "AI suggestion unavailable",
-          }));
-        }
-      }
-    } catch (error: any) {
-      console.error("Error fetching AI suggestions:", error);
-    } finally {
-      setLoadingSuggestions(false);
-    }
-  };
 
   const parseNumber = (
     v: string | number | undefined,
