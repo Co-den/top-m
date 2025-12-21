@@ -141,7 +141,7 @@ export default function AIChatbot() {
                 </div>
                 <div>
                   <h3 className="font-semibold">TopMart Assistant</h3>
-                  <p className="text-xs opacity-90">Powered by Claude AI</p>
+                  <p className="text-xs opacity-90">Powered by OpenAI</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
