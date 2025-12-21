@@ -10,7 +10,7 @@ import { apiRequest } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { getPlanSuggestion } from "@/utils/germinipage";
 //import FloatingAIButton from "@/components/floating-button";
-import AIChatbot from "@/components/AI-chatbot";
+
 
 interface Plan {
   _id: string;
@@ -146,7 +146,6 @@ export default function MainHomePage() {
       transition={{ duration: 0.35, ease: "easeOut" }}
       className="min-h-screen bg-[#f5f5f5] pb-24 flex flex-col items-center"
     >
-      <AIChatbot />
       <div className="w-full max-w-3xl">
         <motion.div
           initial={{ opacity: 0, scale: 0.995 }}
