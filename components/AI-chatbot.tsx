@@ -114,7 +114,7 @@ export default function AIChatbot() {
             animate={{ scale: 1 }}
             exit={{ scale: 0 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 bg-gradient-to-r from-pink-500 to-purple-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-shadow z-50 group"
+            className="fixed bottom-6 right-6 bg-linear-to-r from-pink-500 to-purple-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-shadow z-50 group"
           >
             <MessageCircle className="w-6 h-6" />
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center animate-pulse">
@@ -134,7 +134,7 @@ export default function AIChatbot() {
             className="fixed bottom-6 right-6 w-[400px] h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden"
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white p-4 flex items-center justify-between">
+            <div className="bg-linear-to-r from-pink-500 to-purple-600 text-white p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                   <MessageCircle className="w-5 h-5" />
@@ -175,7 +175,7 @@ export default function AIChatbot() {
                   <div
                     className={`max-w-[80%] p-3 rounded-2xl ${
                       msg.role === "user"
-                        ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white"
+                        ? "bg-linear-to-r from-pink-500 to-purple-600 text-white"
                         : "bg-white text-gray-800 shadow-sm border border-gray-100"
                     }`}
                   >
@@ -240,7 +240,7 @@ export default function AIChatbot() {
               <button
                 onClick={sendMessage}
                 disabled={isLoading || !input.trim()}
-                className="bg-gradient-to-r from-pink-500 to-purple-600 text-white p-3 rounded-full hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-linear-to-r from-pink-500 to-purple-600 text-white p-3 rounded-full hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-5 h-5" />
               </button>
